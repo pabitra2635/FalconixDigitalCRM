@@ -11,6 +11,9 @@
     <!-- Phosphor Icons -->
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
 
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Tailwind Configuration -->
     <script>
         tailwind.config = {
@@ -281,6 +284,32 @@
                             </div>
                         </div>
 
+                        <!-- Analytics Section -->
+                        <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Analytics Overview</h3>
+                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-8 md:mb-10">
+                            <!-- Revenue Graph -->
+                            <div class="glass p-4 md:p-6 rounded-2xl flex flex-col">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-bold text-gray-800 dark:text-gray-200">Monthly Revenue (Completed)</h4>
+                                    <i class="ph ph-trend-up text-accentRed text-xl"></i>
+                                </div>
+                                <div class="relative w-full h-[250px]">
+                                    <canvas id="revenueChart"></canvas>
+                                </div>
+                            </div>
+                            
+                            <!-- Source Tracking -->
+                            <div class="glass p-4 md:p-6 rounded-2xl flex flex-col">
+                                <div class="flex justify-between items-center mb-4">
+                                    <h4 class="font-bold text-gray-800 dark:text-gray-200">Client Sources</h4>
+                                    <i class="ph ph-chart-pie-slice text-purple-500 text-xl"></i>
+                                </div>
+                                <div class="relative w-full h-[250px] flex items-center justify-center">
+                                    <canvas id="sourceChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- Recent Clients -->
                         <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Recently Added</h3>
                         <div class="glass rounded-2xl overflow-hidden shadow-sm">
@@ -377,7 +406,7 @@
                             <!-- Basic Info -->
                             <div>
                                 <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-user text-accentRed"></i> Basic Information</h3>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client Name *</label>
                                         <input type="text" id="form-name" required class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
@@ -385,6 +414,18 @@
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Business Type</label>
                                         <input type="text" id="form-business" placeholder="e.g. CA Firm, Real Estate" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client Source</label>
+                                        <select id="form-source" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                            <option value="Referral">Referral / Word of Mouth</option>
+                                            <option value="Instagram">Instagram</option>
+                                            <option value="Facebook">Facebook</option>
+                                            <option value="LinkedIn">LinkedIn</option>
+                                            <option value="Cold Call">Cold Call</option>
+                                            <option value="Organic Search">Organic Search</option>
+                                            <option value="Other">Other</option>
+                                        </select>
                                     </div>
                                 </div>
                             </div>
@@ -503,6 +544,10 @@
                         <a id="modal-website-url" target="_blank" class="font-medium break-all">-</a>
                     </div>
                     <div>
+                        <p class="text-xs md:text-sm text-gray-500">Client Source</p>
+                        <p class="font-medium text-indigo-500" id="modal-source">-</p>
+                    </div>
+                    <div>
                         <p class="text-xs md:text-sm text-gray-500">Project Value</p>
                         <p class="font-medium text-accentRed text-lg" id="modal-price">-</p>
                     </div>
@@ -580,6 +625,10 @@
         let currentUser = null;
         let clientsList = [];
         let unsubscribeClients = null;
+        
+        // Chart Instances
+        let revenueChartInstance = null;
+        let sourceChartInstance = null;
 
         // UI Elements
         const loginWrapper = document.getElementById('login-wrapper');
@@ -786,6 +835,7 @@
                 clientsList.sort((a, b) => b.createdAt - a.createdAt);
                 
                 updateDashboardStats();
+                updateCharts();
                 renderClientTable();
                 
                 globalLoader.classList.add('hidden');
@@ -815,6 +865,7 @@
             const clientData = {
                 name: document.getElementById('form-name').value.trim(),
                 business: document.getElementById('form-business').value.trim(),
+                source: document.getElementById('form-source').value,
                 phone: document.getElementById('form-phone').value.trim(),
                 email: document.getElementById('form-email').value.trim(),
                 website: document.getElementById('form-website').value,
@@ -905,6 +956,11 @@
                 themeText.innerText = 'Light Mode';
                 themeIcon.classList.replace('ph-moon', 'ph-sun');
             }
+
+            // Redraw charts with correct theme colors
+            setTimeout(() => {
+                if(clientsList.length > 0) updateCharts();
+            }, 50);
         };
 
         if (localStorage.getItem('theme') === 'light') {
@@ -922,6 +978,7 @@
             document.getElementById('client-id').value = client.id;
             document.getElementById('form-name').value = client.name;
             document.getElementById('form-business').value = client.business;
+            document.getElementById('form-source').value = client.source || 'Referral';
             document.getElementById('form-phone').value = client.phone;
             document.getElementById('form-email').value = client.email;
             document.getElementById('form-website').value = client.website;
@@ -984,6 +1041,140 @@
                     </td>
                 `;
                 recentBody.appendChild(tr);
+            });
+        }
+
+        // --- Chart Generation Logic ---
+        function updateCharts() {
+            if (!document.getElementById('revenueChart')) return;
+            
+            // Theme Colors
+            const isDark = document.documentElement.classList.contains('dark');
+            const textColor = isDark ? '#9ca3af' : '#6b7280';
+            const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+
+            // 1. Prepare Monthly Revenue Data (Last 6 Months)
+            const last6Months = [];
+            const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+            const now = new Date();
+            
+            for (let i = 5; i >= 0; i--) {
+                let d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+                last6Months.push({
+                    label: `${monthNames[d.getMonth()]} ${d.getFullYear()}`,
+                    month: d.getMonth(),
+                    year: d.getFullYear(),
+                    revenue: 0
+                });
+            }
+
+            const sourcesMap = {};
+
+            // Aggregate Data
+            clientsList.forEach(client => {
+                // Aggregate Sources
+                const src = client.source || 'Referral';
+                sourcesMap[src] = (sourcesMap[src] || 0) + 1;
+
+                // Aggregate Revenue
+                if (client.status === 'Completed' && client.createdAt) {
+                    const d = new Date(client.createdAt);
+                    const m = d.getMonth();
+                    const y = d.getFullYear();
+                    
+                    const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
+                    if (monthObj) {
+                        monthObj.revenue += (Number(client.price) || 0);
+                    }
+                }
+            });
+
+            // 2. Render Revenue Bar Chart
+            const ctxRev = document.getElementById('revenueChart').getContext('2d');
+            if (revenueChartInstance) revenueChartInstance.destroy();
+            
+            revenueChartInstance = new Chart(ctxRev, {
+                type: 'bar',
+                data: {
+                    labels: last6Months.map(m => m.label),
+                    datasets: [{
+                        label: 'Revenue (₹)',
+                        data: last6Months.map(m => m.revenue),
+                        backgroundColor: '#ff1a1a',
+                        borderRadius: 6,
+                        hoverBackgroundColor: '#cc0000',
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return '₹' + context.parsed.y.toLocaleString('en-IN');
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            beginAtZero: true, 
+                            grid: { color: gridColor }, 
+                            ticks: { 
+                                color: textColor,
+                                callback: function(value) { return '₹' + value.toLocaleString('en-IN'); }
+                            },
+                            border: { display: false }
+                        },
+                        x: { 
+                            grid: { display: false }, 
+                            ticks: { color: textColor },
+                            border: { display: false }
+                        }
+                    }
+                }
+            });
+
+            // 3. Render Source Doughnut Chart
+            const ctxSrc = document.getElementById('sourceChart').getContext('2d');
+            if (sourceChartInstance) sourceChartInstance.destroy();
+
+            const srcLabels = Object.keys(sourcesMap);
+            const srcData = Object.values(sourcesMap);
+
+            sourceChartInstance = new Chart(ctxSrc, {
+                type: 'doughnut',
+                data: {
+                    labels: srcLabels,
+                    datasets: [{
+                        data: srcData,
+                        backgroundColor: [
+                            '#3b82f6', // Blue
+                            '#8b5cf6', // Violet
+                            '#ec4899', // Pink
+                            '#f59e0b', // Amber
+                            '#10b981', // Emerald
+                            '#64748b', // Slate
+                            '#ef4444'  // Red
+                        ],
+                        borderWidth: isDark ? 2 : 0,
+                        borderColor: isDark ? '#111111' : '#ffffff',
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { 
+                            position: window.innerWidth < 768 ? 'bottom' : 'right', 
+                            labels: { color: textColor, padding: 20, usePointStyle: true } 
+                        }
+                    },
+                    cutout: '70%'
+                }
             });
         }
 
@@ -1063,6 +1254,7 @@
             document.getElementById('modal-phone').innerText = client.phone;
             document.getElementById('modal-email').innerText = client.email || 'N/A';
             document.getElementById('modal-website').innerText = client.website;
+            document.getElementById('modal-source').innerText = client.source || 'N/A';
             
             const urlEl = document.getElementById('modal-website-url');
             if (client.websiteUrl) {
