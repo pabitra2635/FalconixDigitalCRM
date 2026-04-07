@@ -883,15 +883,17 @@
                 
                 showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
                 
+                // Clear the form back to initial state immediately
                 document.getElementById('client-form').reset();
                 document.getElementById('client-id').value = "";
+                document.getElementById('form-title').innerText = "Add New Client";
                 navigate('client-list');
             } catch (error) {
                 console.error("Save Error:", error);
                 showToast("Failed to save client.", "error");
             } finally {
-                // Restore Button State
-                submitBtn.innerHTML = originalBtnHtml;
+                // Restore Button State but strictly as "Save Client" so the edit state is lost
+                submitBtn.innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>';
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
@@ -911,7 +913,7 @@
             }
         };
 
-        window.navigate = function(viewId) {
+        window.navigate = function(viewId, isEdit = false) {
             document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
             document.querySelectorAll('.nav-btn').forEach(el => {
                 el.classList.remove('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
@@ -930,11 +932,14 @@
                 document.getElementById('mobile-overlay').classList.add('hidden');
             }
 
-            if(viewId === 'add-client' && document.getElementById('client-id').value === "") {
+            // Only perfectly wipe the form if it's accessed via the normal navigation flow, not from the "Edit" button
+            if(viewId === 'add-client' && !isEdit) {
                 document.getElementById('form-title').innerText = "Add New Client";
                 document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>';
+                document.getElementById('client-id').value = "";
                 document.getElementById('client-form').reset();
             }
+
             if(viewId === 'client-list' || viewId === 'dashboard') {
                 renderClientTable();
             }
@@ -974,6 +979,11 @@
         window.editClient = function(id) {
             const client = clientsList.find(c => c.id === id);
             if(!client) return;
+            
+            closeModal();
+            // Important: Send 'true' to let the navigation logic know we are editing, so it shouldn't wipe the form empty
+            navigate('add-client', true);
+            
             document.getElementById('client-id').value = client.id;
             document.getElementById('form-name').value = client.name;
             document.getElementById('form-business').value = client.business;
@@ -985,10 +995,9 @@
             document.getElementById('form-price').value = client.price;
             document.getElementById('form-status').value = client.status;
             document.getElementById('form-notes').value = client.notes;
+            
             document.getElementById('form-title').innerText = "Edit Client Details";
             document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Update Client</span>';
-            closeModal();
-            navigate('add-client');
         };
 
         function getStatusBadge(status) {
