@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Falconix Digital CRM</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Phosphor Icons -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+
+    <!-- Tailwind Configuration -->
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        darkBg: '#0a0a0a',
+                        darkCard: '#111111',
+                        lightBg: '#f5f5f5',
+                        lightCard: '#ffffff',
+                        accentRed: '#ff1a1a',
+                        accentRedHover: '#cc0000',
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* Glassmorphism Utilities */
+        .glass {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .dark .glass {
+            background: rgba(17, 17, 17, 0.7);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .light .glass {
+            background: rgba(255, 255, 255, 0.7);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #ff1a1a;
+            border-radius: 4px;
+        }
+
+        /* Hide views by default */
+        .view-section {
+            display: none;
+            animation: fadeIn 0.4s ease-in-out;
+        }
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* Toast Animation */
+        @keyframes slideInRight {
+            from { transform: translateX(100%); opacity: 0; }
+            to { transform: translateX(0); opacity: 1; }
+        }
+        .toast-enter {
+            animation: slideInRight 0.3s forwards;
+        }
+
+        /* Loader */
+        .loader {
+            border: 3px solid rgba(255, 26, 26, 0.3);
+            border-radius: 50%;
+            border-top: 3px solid #ff1a1a;
+            width: 24px;
+            height: 24px;
+            -webkit-animation: spin 1s linear infinite; /* Safari */
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-screen flex overflow-hidden">
+
+    <!-- Mobile Overlay for Sidebar -->
+    <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity"></div>
+
+    <!-- Sidebar Navigation -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 glass bg-lightBg/95 dark:bg-darkBg/95 border-r border-gray-200 dark:border-gray-800 flex flex-col h-full z-40 shrink-0">
+        <div class="p-6 flex items-center justify-between md:justify-start gap-3">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-xl">
+                    F
+                </div>
+                <h1 class="text-xl font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
+            </div>
+            <!-- Mobile Close Button inside sidebar -->
+            <button onclick="toggleMobileMenu()" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-accentRed">
+                <i class="ph ph-x text-lg"></i>
+            </button>
+        </div>
+
+        <nav class="flex-1 px-4 mt-2 md:mt-6 space-y-2 overflow-y-auto">
+            <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50 text-accentRed bg-gray-100 dark:bg-gray-800/50">
+                <i class="ph ph-squares-four text-xl"></i>
+                <span class="font-medium">Dashboard</span>
+            </button>
+            <button onclick="navigate('client-list')" id="nav-client-list" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
+                <i class="ph ph-users text-xl"></i>
+                <span class="font-medium">Clients</span>
+            </button>
+            <button onclick="navigate('add-client')" id="nav-add-client" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
+                <i class="ph ph-user-plus text-xl"></i>
+                <span class="font-medium">Add Client</span>
+            </button>
+        </nav>
+
+        <div class="p-6 border-t border-gray-200 dark:border-gray-800">
+            <button onclick="toggleTheme()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
+                <span class="font-medium" id="theme-text">Dark Mode</span>
+                <i class="ph ph-moon text-xl" id="theme-icon"></i>
+            </button>
+            <div class="mt-4 flex items-center gap-2 text-sm text-gray-500">
+                <div id="auth-status-dot" class="w-2 h-2 rounded-full bg-yellow-500"></div>
+                <span id="auth-status-text">Connecting...</span>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content Area Wrapper -->
+    <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
+        
+        <!-- Mobile Top Header -->
+        <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-200 dark:border-gray-800 z-20">
+            <div class="flex items-center gap-2">
+                <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-lg">F</div>
+                <h1 class="text-lg font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
+            </div>
+            <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-accentRed transition-colors">
+                <i class="ph ph-list text-2xl"></i>
+            </button>
+        </header>
+
+        <!-- Main Scrollable Area -->
+        <main class="flex-1 overflow-y-auto relative">
+            
+            <!-- Global Loading Overlay -->
+            <div id="global-loader" class="absolute inset-0 bg-lightBg/80 dark:bg-darkBg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
+                <div class="loader mb-4 w-12 h-12 border-4 text-accentRed"></div>
+                <p class="font-medium animate-pulse">Loading Falconix CRM...</p>
+            </div>
+
+            <div class="p-4 md:p-8 max-w-6xl mx-auto">
+                
+                <!-- Dashboard View -->
+                <section id="view-dashboard" class="view-section active">
+                    <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Overview</h2>
+                    <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8">Welcome back to Falconix Digital CRM.</p>
+
+                    <!-- Stats Cards -->
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10">
+                        <div class="glass p-5 md:p-6 rounded-2xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Total Clients</p>
+                                    <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-total-clients">0</h3>
+                                </div>
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed">
+                                    <i class="ph ph-users text-xl md:text-2xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="glass p-5 md:p-6 rounded-2xl">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Active Projects</p>
+                                    <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-active-projects">0</h3>
+                                </div>
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
+                                    <i class="ph ph-kanban text-xl md:text-2xl"></i>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="glass p-5 md:p-6 rounded-2xl sm:col-span-2 md:col-span-1">
+                            <div class="flex justify-between items-start">
+                                <div>
+                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Completed</p>
+                                    <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-completed-projects">0</h3>
+                                </div>
+                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                                    <i class="ph ph-check-circle text-xl md:text-2xl"></i>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Recent Clients -->
+                    <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Recently Added</h3>
+                    <div class="glass rounded-2xl overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
+                                <thead>
+                                    <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
+                                        <th class="p-3 md:p-4 font-medium">Client</th>
+                                        <th class="p-3 md:p-4 font-medium">Business</th>
+                                        <th class="p-3 md:p-4 font-medium">Status</th>
+                                        <th class="p-3 md:p-4 font-medium text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="recent-clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Client List View -->
+                <section id="view-client-list" class="view-section">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
+                        <div>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Client Database</h2>
+                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Manage and track your agency's clients.</p>
+                        </div>
+                        <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
+                            <i class="ph ph-plus text-lg"></i> New Client
+                        </button>
+                    </div>
+
+                    <!-- Filters -->
+                    <div class="glass p-3 md:p-4 rounded-2xl mb-4 md:mb-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+                        <div class="flex-1 relative">
+                            <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                            <input type="text" id="search-input" placeholder="Search by name or phone..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 pl-11 pr-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                        </div>
+                        <div class="w-full sm:w-48">
+                            <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                <option value="All">All Statuses</option>
+                                <option value="Pending">Pending</option>
+                                <option value="Active">Active</option>
+                                <option value="Completed">Completed</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Client Table -->
+                    <div class="glass rounded-2xl overflow-hidden shadow-sm">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
+                                <thead>
+                                    <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
+                                        <th class="p-3 md:p-4 font-medium">Name & Contact</th>
+                                        <th class="p-3 md:p-4 font-medium">Business Detail</th>
+                                        <th class="p-3 md:p-4 font-medium">Price</th>
+                                        <th class="p-3 md:p-4 font-medium">Status</th>
+                                        <th class="p-3 md:p-4 font-medium text-right">Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
+                                    <!-- Populated by JS -->
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Empty State -->
+                        <div id="empty-state" class="hidden flex-col items-center justify-center py-12 md:py-16 text-center px-4">
+                            <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                <i class="ph ph-users-slash text-2xl md:text-3xl text-gray-400"></i>
+                            </div>
+                            <h3 class="text-lg md:text-xl font-medium mb-2">No clients found</h3>
+                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-sm mx-auto">Add your first client to start managing your projects, or adjust your search filters.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Add/Edit Client View -->
+                <section id="view-add-client" class="view-section max-w-3xl mx-auto">
+                    <div class="mb-6 md:mb-8">
+                        <button onclick="navigate('client-list')" class="text-gray-500 hover:text-accentRed transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
+                            <i class="ph ph-arrow-left"></i> Back to list
+                        </button>
+                        <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2" id="form-title">Add New Client</h2>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Enter the details for the new project.</p>
+                    </div>
+
+                    <form id="client-form" class="glass p-5 md:p-8 rounded-2xl shadow-sm space-y-5 md:space-y-6">
+                        <input type="hidden" id="client-id">
+                        
+                        <!-- Basic Info -->
+                        <div>
+                            <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-user text-accentRed"></i> Basic Information</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client Name *</label>
+                                    <input type="text" id="form-name" required class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Business Type</label>
+                                    <input type="text" id="form-business" placeholder="e.g. CA Firm, Real Estate" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-gray-200 dark:border-gray-800">
+
+                        <!-- Contact Info -->
+                        <div>
+                            <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-address-book text-accentRed"></i> Contact Details</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Phone Number *</label>
+                                    <input type="tel" id="form-phone" required placeholder="+91 98765 43210" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
+                                    <input type="email" id="form-email" placeholder="client@example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="border-gray-200 dark:border-gray-800">
+
+                        <!-- Project Details -->
+                        <div>
+                            <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-globe text-accentRed"></i> Project Specifications</h3>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Website Type</label>
+                                    <select id="form-website" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                        <option value="Landing Page">Landing Page</option>
+                                        <option value="Corporate">Corporate / Business</option>
+                                        <option value="E-Commerce">E-Commerce</option>
+                                        <option value="Portfolio">Portfolio</option>
+                                        <option value="Web App">Custom Web App</option>
+                                        <option value="Other">Other</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Live Website URL</label>
+                                    <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                </div>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Price (₹) *</label>
+                                    <input type="number" id="form-price" required min="0" step="0.01" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                </div>
+                                <div>
+                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
+                                    <select id="form-status" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                        <option value="Pending">Pending</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Completed">Completed</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div>
+                            <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Internal Notes</label>
+                            <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific requirements..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
+                        </div>
+
+                        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                            <button type="button" onclick="navigate('client-list')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-center">
+                                Cancel
+                            </button>
+                            <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentRed hover:bg-accentRedHover text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+                                <i class="ph ph-floppy-disk text-lg"></i> Save Client
+                            </button>
+                        </div>
+                    </form>
+                </section>
+            </div>
+        </main>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toast-container" class="fixed bottom-4 md:bottom-6 right-4 md:right-6 left-4 md:left-auto z-50 flex flex-col gap-3 pointer-events-none"></div>
+
+    <!-- Client Detail Modal (Glassmorphism) -->
+    <div id="client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            <div class="p-4 md:p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
+                <h3 class="text-xl md:text-2xl font-bold truncate pr-4" id="modal-name">Client Name</h3>
+                <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition-colors shrink-0">
+                    <i class="ph ph-x"></i>
+                </button>
+            </div>
+            <div class="p-4 md:p-6 overflow-y-auto flex-1">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-6">
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Business Type</p>
+                        <p class="font-medium text-base md:text-lg" id="modal-business">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Status</p>
+                        <span id="modal-status" class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"></span>
+                    </div>
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Phone</p>
+                        <p class="font-medium" id="modal-phone">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Email</p>
+                        <p class="font-medium truncate" id="modal-email">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Website Type</p>
+                        <p class="font-medium" id="modal-website">-</p>
+                    </div>
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Live Link</p>
+                        <a id="modal-website-url" target="_blank" class="font-medium break-all">-</a>
+                    </div>
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Project Value</p>
+                        <p class="font-medium text-accentRed text-lg" id="modal-price">-</p>
+                    </div>
+                </div>
+                <div class="bg-gray-50 dark:bg-gray-800/50 p-3 md:p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <p class="text-xs md:text-sm text-gray-500 mb-1.5 md:mb-2 font-medium">Notes</p>
+                    <p class="whitespace-pre-wrap text-sm" id="modal-notes">-</p>
+                </div>
+            </div>
+            <div class="p-4 md:p-6 border-t border-gray-200 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3">
+                <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2">
+                    <i class="ph ph-whatsapp-logo text-xl"></i> WhatsApp
+                </a>
+                <button id="modal-edit-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors flex items-center justify-center gap-2">
+                    <i class="ph ph-pencil-simple text-lg"></i> Edit Details
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- JavaScript Logic & Firebase Integration -->
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
+
+        // Environment Variables Configuration
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
+        
+        // Your web app's Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBLhHBKVBY57_KLrT9IpQ9o7alYlEioovA",
+            authDomain: "falconixdigitalbusiness.firebaseapp.com",
+            projectId: "falconixdigitalbusiness",
+            storageBucket: "falconixdigitalbusiness.firebasestorage.app",
+            messagingSenderId: "835356453879",
+            appId: "1:835356453879:web:b321312b9b9e0881b35cf2",
+            measurementId: "G-TDHSGQF5SV"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // State Management
+        let currentUser = null;
+        let clientsList = [];
+        let unsubscribeClients = null;
+
+        // DOM Elements
+        const globalLoader = document.getElementById('global-loader');
+        const authStatusDot = document.getElementById('auth-status-dot');
+        const authStatusText = document.getElementById('auth-status-text');
+
+        // Initialize Authentication First (Mandatory Rule)
+        async function initAuth() {
+            try {
+                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                    await signInWithCustomToken(auth, __initial_auth_token);
+                } else {
+                    await signInAnonymously(auth);
+                }
+            } catch (error) {
+                console.error("Authentication Error:", error);
+                showToast("Failed to connect to secure server.", "error");
+                authStatusDot.className = "w-2 h-2 rounded-full bg-red-500";
+                authStatusText.innerText = "Connection Failed";
+            }
+        }
+
+        // Auth State Observer
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                currentUser = user;
+                authStatusDot.className = "w-2 h-2 rounded-full bg-green-500";
+                authStatusText.innerText = "Connected Securely";
+                setupDatabaseListener();
+            } else {
+                currentUser = null;
+                if(unsubscribeClients) unsubscribeClients();
+            }
+        });
+
+        // Setup Firestore Listener
+        function setupDatabaseListener() {
+            if (!currentUser) return;
+
+            // Strict Path Rule Implementation
+            const clientsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clients');
+
+            // No complex queries as per rules, fetch all and filter in JS memory
+            unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
+                clientsList = [];
+                snapshot.forEach((doc) => {
+                    clientsList.push({ id: doc.id, ...doc.data() });
+                });
+                
+                // Sort by creation date descending in memory
+                clientsList.sort((a, b) => b.createdAt - a.createdAt);
+                
+                updateDashboardStats();
+                renderClientTable();
+                
+                // Hide loader on first data fetch
+                if(!globalLoader.classList.contains('hidden')) {
+                    globalLoader.classList.add('hidden');
+                }
+            }, (error) => {
+                console.error("Firestore Error:", error);
+                showToast("Database sync error.", "error");
+            });
+        }
+
+        // --- Mobile Menu Toggle Logic ---
+        window.toggleMobileMenu = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            if (sidebar.classList.contains('-translate-x-full')) {
+                // Open menu
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                // Close menu
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        };
+
+        // --- UI Navigation Logic ---
+        window.navigate = function(viewId) {
+            // Hide all views
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            
+            // Reset nav buttons
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
+                el.classList.add('text-gray-600', 'dark:text-gray-400');
+            });
+
+            // Show selected view
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            
+            // Highlight selected nav
+            const navBtn = document.getElementById(`nav-${viewId}`);
+            if(navBtn) {
+                navBtn.classList.remove('text-gray-600', 'dark:text-gray-400');
+                navBtn.classList.add('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
+            }
+
+            // Close mobile menu if open
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('mobile-overlay').classList.add('hidden');
+            }
+
+            // Reset form if navigating to Add Client fresh
+            if(viewId === 'add-client' && document.getElementById('client-id').value === "") {
+                document.getElementById('form-title').innerText = "Add New Client";
+                document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Save Client';
+                document.getElementById('client-form').reset();
+            }
+
+            // Render table if navigating to list to apply potential filter changes
+            if(viewId === 'client-list' || viewId === 'dashboard') {
+                renderClientTable();
+            }
+        };
+
+        // --- Theme Toggle Logic ---
+        window.toggleTheme = function() {
+            const html = document.documentElement;
+            const themeText = document.getElementById('theme-text');
+            const themeIcon = document.getElementById('theme-icon');
+
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeText.innerText = 'Dark Mode';
+                themeIcon.classList.replace('ph-sun', 'ph-moon');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeText.innerText = 'Light Mode';
+                themeIcon.classList.replace('ph-moon', 'ph-sun');
+            }
+        };
+
+        // Initialize theme from localStorage
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-text').innerText = 'Dark Mode';
+            document.getElementById('theme-icon').classList.replace('ph-sun', 'ph-moon');
+        } else {
+            // Default is dark
+            document.getElementById('theme-icon').classList.replace('ph-moon', 'ph-sun');
+            document.getElementById('theme-text').innerText = 'Light Mode';
+        }
+
+
+        // --- CRUD Operations ---
+
+        // Save (Add/Update) Client
+        document.getElementById('client-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (!currentUser) {
+                showToast("Not authenticated.", "error");
+                return;
+            }
+
+            const idField = document.getElementById('client-id').value;
+            const isEditing = !!idField;
+            const clientId = isEditing ? idField : crypto.randomUUID();
+
+            const clientData = {
+                name: document.getElementById('form-name').value.trim(),
+                business: document.getElementById('form-business').value.trim(),
+                phone: document.getElementById('form-phone').value.trim(),
+                email: document.getElementById('form-email').value.trim(),
+                website: document.getElementById('form-website').value,
+                websiteUrl: document.getElementById('form-website-url').value.trim(),
+                price: parseFloat(document.getElementById('form-price').value) || 0,
+                status: document.getElementById('form-status').value,
+                notes: document.getElementById('form-notes').value.trim(),
+                createdAt: isEditing ? clientsList.find(c => c.id === clientId)?.createdAt || Date.now() : Date.now(),
+                updatedAt: Date.now()
+            };
+
+            try {
+                // Save to Firestore
+                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'clients', clientId);
+                await setDoc(docRef, clientData);
+                
+                showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
+                
+                // Reset form and navigate
+                document.getElementById('client-form').reset();
+                document.getElementById('client-id').value = "";
+                navigate('client-list');
+                
+            } catch (error) {
+                console.error("Save Error:", error);
+                showToast("Failed to save client.", "error");
+            }
+        });
+
+        // Edit Client (Populate Form)
+        window.editClient = function(id) {
+            const client = clientsList.find(c => c.id === id);
+            if(!client) return;
+
+            document.getElementById('client-id').value = client.id;
+            document.getElementById('form-name').value = client.name;
+            document.getElementById('form-business').value = client.business;
+            document.getElementById('form-phone').value = client.phone;
+            document.getElementById('form-email').value = client.email;
+            document.getElementById('form-website').value = client.website;
+            document.getElementById('form-website-url').value = client.websiteUrl || '';
+            document.getElementById('form-price').value = client.price;
+            document.getElementById('form-status').value = client.status;
+            document.getElementById('form-notes').value = client.notes;
+
+            document.getElementById('form-title').innerText = "Edit Client Details";
+            document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Update Client';
+            
+            closeModal();
+            navigate('add-client');
+        };
+
+        // --- Rendering Logic ---
+
+        // Helper: Get status badge styling
+        function getStatusBadge(status) {
+            switch(status) {
+                case 'Pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-800';
+                case 'Active': return 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500 border border-blue-200 dark:border-blue-800';
+                case 'Completed': return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500 border border-green-200 dark:border-green-800';
+                default: return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
+            }
+        }
+
+        // Render Dashboard Data
+        function updateDashboardStats() {
+            const total = clientsList.length;
+            const active = clientsList.filter(c => c.status === 'Active').length;
+            const completed = clientsList.filter(c => c.status === 'Completed').length;
+
+            document.getElementById('stat-total-clients').innerText = total;
+            document.getElementById('stat-active-projects').innerText = active;
+            document.getElementById('stat-completed-projects').innerText = completed;
+
+            // Render Recent 5
+            const recentBody = document.getElementById('recent-clients-tbody');
+            recentBody.innerHTML = '';
+            
+            clientsList.slice(0, 5).forEach(client => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer";
+                tr.onclick = () => openModal(client.id);
+                
+                tr.innerHTML = `
+                    <td class="p-3 md:p-4">
+                        <p class="font-medium">${client.name}</p>
+                        <p class="text-[10px] md:text-xs text-gray-500">${client.phone}</p>
+                    </td>
+                    <td class="p-3 md:p-4 text-xs md:text-sm">${client.business || '-'}</td>
+                    <td class="p-3 md:p-4">
+                        <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">
+                            ${client.status}
+                        </span>
+                    </td>
+                    <td class="p-3 md:p-4 text-right">
+                        <button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-400 hover:text-accentRed transition-colors p-1 md:p-2">
+                            <i class="ph ph-pencil-simple text-base md:text-lg"></i>
+                        </button>
+                    </td>
+                `;
+                recentBody.appendChild(tr);
+            });
+        }
+
+        // Render Full Client List with Filters (In-Memory Processing)
+        function renderClientTable() {
+            const tbody = document.getElementById('clients-tbody');
+            const emptyState = document.getElementById('empty-state');
+            const searchQ = document.getElementById('search-input').value.toLowerCase();
+            const statusQ = document.getElementById('filter-status').value;
+
+            // Filter in memory
+            const filtered = clientsList.filter(client => {
+                const matchSearch = client.name.toLowerCase().includes(searchQ) || client.phone.includes(searchQ);
+                const matchStatus = statusQ === 'All' || client.status === statusQ;
+                return matchSearch && matchStatus;
+            });
+
+            tbody.innerHTML = '';
+
+            if (filtered.length === 0) {
+                tbody.parentElement.classList.add('hidden');
+                emptyState.classList.remove('hidden');
+                emptyState.classList.add('flex');
+            } else {
+                tbody.parentElement.classList.remove('hidden');
+                emptyState.classList.add('hidden');
+                emptyState.classList.remove('flex');
+
+                filtered.forEach(client => {
+                    const tr = document.createElement('tr');
+                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors md:group";
+                    
+                    tr.innerHTML = `
+                        <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
+                            <div class="flex items-center gap-2 md:gap-3">
+                                <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 font-bold text-sm md:text-base shrink-0">
+                                    ${client.name.charAt(0).toUpperCase()}
+                                </div>
+                                <div>
+                                    <p class="font-semibold text-sm md:text-base">${client.name}</p>
+                                    <p class="text-[10px] md:text-xs text-gray-500 flex items-center gap-1"><i class="ph ph-phone"></i> ${client.phone}</p>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="p-3 md:p-4 cursor-pointer text-xs md:text-sm" onclick="openModal('${client.id}')">
+                            <p class="font-medium">${client.business || 'N/A'}</p>
+                            <p class="text-[10px] md:text-xs text-gray-500">${client.website}</p>
+                        </td>
+                        <td class="p-3 md:p-4 cursor-pointer font-medium text-sm md:text-base" onclick="openModal('${client.id}')">
+                            ₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        </td>
+                        <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
+                            <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">
+                                ${client.status}
+                            </span>
+                        </td>
+                        <td class="p-3 md:p-4 text-right">
+                            <div class="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                                <a href="https://wa.me/${client.phone.replace(/[^0-9]/g, '')}" target="_blank" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
+                                    <i class="ph ph-whatsapp-logo text-base md:text-lg"></i>
+                                </a>
+                                <button onclick="editClient('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400 flex items-center justify-center hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors" title="Edit">
+                                    <i class="ph ph-pencil-simple text-base md:text-lg"></i>
+                                </button>
+                            </div>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }
+        }
+
+        // Attach event listeners to filters
+        document.getElementById('search-input').addEventListener('input', renderClientTable);
+        document.getElementById('filter-status').addEventListener('change', renderClientTable);
+
+
+        // --- Modal Logic ---
+        const modal = document.getElementById('client-modal');
+        
+        window.openModal = function(id) {
+            const client = clientsList.find(c => c.id === id);
+            if(!client) return;
+
+            document.getElementById('modal-name').innerText = client.name;
+            document.getElementById('modal-business').innerText = client.business || 'N/A';
+            document.getElementById('modal-phone').innerText = client.phone;
+            document.getElementById('modal-email').innerText = client.email || 'N/A';
+            document.getElementById('modal-website').innerText = client.website;
+            
+            const urlEl = document.getElementById('modal-website-url');
+            if (client.websiteUrl) {
+                urlEl.innerText = client.websiteUrl;
+                urlEl.href = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
+                urlEl.classList.add('text-blue-500', 'hover:text-blue-600', 'underline');
+                urlEl.classList.remove('text-gray-800', 'dark:text-gray-200');
+            } else {
+                urlEl.innerText = 'Not provided';
+                urlEl.removeAttribute('href');
+                urlEl.classList.remove('text-blue-500', 'hover:text-blue-600', 'underline');
+                urlEl.classList.add('text-gray-800', 'dark:text-gray-200');
+            }
+
+            document.getElementById('modal-price').innerText = `₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
+            document.getElementById('modal-notes').innerText = client.notes || 'No notes provided.';
+            
+            const statusEl = document.getElementById('modal-status');
+            statusEl.innerText = client.status;
+            statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
+
+            // Setup action buttons
+            const cleanPhone = client.phone.replace(/[^0-9]/g, '');
+            document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
+            document.getElementById('modal-edit-btn').onclick = () => editClient(id);
+
+            modal.classList.remove('hidden');
+        };
+
+        window.closeModal = function() {
+            modal.classList.add('hidden');
+        };
+
+        // Close modal on outside click
+        modal.addEventListener('click', (e) => {
+            if (e.target === modal) closeModal();
+        });
+
+
+        // --- Toast Notification System ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            
+            let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
+            let icon = 'ph-info';
+            
+            if (type === 'success') {
+                bgClass = 'bg-green-500 text-white';
+                icon = 'ph-check-circle';
+            } else if (type === 'error') {
+                bgClass = 'bg-red-500 text-white';
+                icon = 'ph-warning-circle';
+            }
+
+            // pointer-events-auto restores clicking the toast if we want to, but mainly stops container from blocking clicks
+            toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} w-full md:w-auto md:min-w-[250px] pointer-events-auto`;
+            toast.innerHTML = `
+                <i class="ph ${icon} text-xl"></i>
+                <span class="font-medium text-sm">${message}</span>
+            `;
+
+            container.appendChild(toast);
+
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translateX(100%)';
+                toast.style.transition = 'all 0.3s ease';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // Start Application
+        initAuth();
+
+    </script>
+</body>
+</html>
