@@ -848,7 +848,7 @@
 
                 filtered.forEach(client => {
                     const tr = document.createElement('tr');
-                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors md:group";
+                    tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors";
                     tr.innerHTML = `
                         <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
                             <div class="flex items-center gap-2 md:gap-3">
@@ -872,7 +872,7 @@
                             <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
                         </td>
                         <td class="p-3 md:p-4 text-right">
-                            <div class="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            <div class="flex items-center justify-end gap-2">
                                 <a href="https://wa.me/${client.phone.replace(/[^0-9]/g, '')}" target="_blank" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
                                     <i class="ph ph-whatsapp-logo text-base md:text-lg"></i>
                                 </a>
