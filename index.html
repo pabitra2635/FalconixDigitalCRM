@@ -124,7 +124,7 @@
         }
     </style>
 </head>
-<body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-screen overflow-hidden relative">
+<body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
 
     <!-- LOGIN SCREEN -->
     <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
@@ -146,7 +146,7 @@
     </div>
 
     <!-- APP CONTENT (Hidden until logged in) -->
-    <div id="app-wrapper" class="hidden h-screen w-full flex-col md:flex-row">
+    <div id="app-wrapper" class="hidden h-[100dvh] w-full flex-col md:flex-row">
         <!-- Mobile Overlay for Sidebar -->
         <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity"></div>
 
@@ -197,10 +197,10 @@
         </aside>
 
         <!-- Main Content Area Wrapper -->
-        <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
+        <div class="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden relative">
             
             <!-- Mobile Top Header -->
-            <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-200 dark:border-gray-800 z-20">
+            <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-200 dark:border-gray-800 z-20 shrink-0">
                 <div class="flex items-center gap-2">
                     <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-lg">F</div>
                     <h1 class="text-lg font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
@@ -219,7 +219,7 @@
                     <p class="font-medium animate-pulse">Syncing Database...</p>
                 </div>
 
-                <div class="p-4 md:p-8 max-w-6xl mx-auto">
+                <div class="p-4 pb-24 md:p-8 max-w-6xl mx-auto">
                     
                     <!-- Dashboard View -->
                     <section id="view-dashboard" class="view-section active">
