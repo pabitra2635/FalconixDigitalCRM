@@ -290,8 +290,8 @@
                                         <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
                                             <th class="p-3 md:p-4 font-medium">Client</th>
                                             <th class="p-3 md:p-4 font-medium">Business</th>
-                                            <th class="p-3 md:p-4 font-medium">Status</th>
                                             <th class="p-3 md:p-4 font-medium">Price</th>
+                                            <th class="p-3 md:p-4 font-medium">Status</th>
                                             <th class="p-3 md:p-4 font-medium text-right">Action</th>
                                         </tr>
                                     </thead>
@@ -971,11 +971,11 @@
                         <p class="text-[10px] md:text-xs text-gray-500">${client.phone}</p>
                     </td>
                     <td class="p-3 md:p-4 text-xs md:text-sm">${client.business || '-'}</td>
-                    <td class="p-3 md:p-4">
-                        <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
-                    </td>
                     <td class="p-3 md:p-4 font-medium text-sm md:text-base">
                         ₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                    </td>
+                    <td class="p-3 md:p-4">
+                        <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
                     </td>
                     <td class="p-3 md:p-4 text-right">
                         <button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-400 hover:text-accentRed transition-colors p-1 md:p-2">
