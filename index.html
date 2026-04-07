@@ -225,7 +225,7 @@
                     <section id="view-dashboard" class="view-section active">
                         <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Overview</h2>
                         <div class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8 flex items-center min-h-[1.5rem]">
-                            <span id="greeting-text" class="font-bold bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400 text-transparent bg-clip-text pr-1"></span><span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
+                            <span id="greeting-text" class="font-bold bg-gradient-to-r text-transparent bg-clip-text pr-1"></span><span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
                         <!-- Stats Cards -->
@@ -673,6 +673,18 @@
             let charIndex = 0;
             let isDeleting = false;
 
+            // Define multiple beautiful gradient colors for variety
+            const gradients = [
+                "from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400",
+                "from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400",
+                "from-orange-600 via-amber-600 to-yellow-500 dark:from-orange-400 dark:via-amber-400 dark:to-yellow-300",
+                "from-rose-600 via-pink-600 to-fuchsia-600 dark:from-rose-400 dark:via-pink-400 dark:to-fuchsia-400",
+                "from-cyan-600 via-blue-600 to-indigo-600 dark:from-cyan-400 dark:via-blue-400 dark:to-indigo-400"
+            ];
+
+            // Initialize first color
+            el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text pr-1 " + gradients[0];
+
             function type() {
                 const currentPhrase = phrases[phraseIndex];
                 
@@ -693,6 +705,9 @@
                     isDeleting = false;
                     phraseIndex = (phraseIndex + 1) % phrases.length;
                     typingSpeed = 500; // Pause before typing the next phrase
+                    
+                    // Switch to a new gradient color for the next greeting
+                    el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text pr-1 " + gradients[phraseIndex % gradients.length];
                 }
 
                 typewriterTimeout = setTimeout(type, typingSpeed);
