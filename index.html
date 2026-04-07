@@ -185,7 +185,7 @@
                     <span class="font-medium text-sm" id="theme-text">Dark Mode</span>
                     <i class="ph ph-moon text-lg" id="theme-icon"></i>
                 </button>
-                <button onclick="logoutAdmin()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/10 text-accentRed hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                <button onclick="showLogoutModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/10 text-accentRed hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
                     <span class="font-medium text-sm">Sign Out</span>
                     <i class="ph ph-sign-out text-lg"></i>
                 </button>
@@ -506,6 +506,24 @@
         </div>
     </div>
 
+    <!-- Logout Confirmation Modal -->
+    <div id="logout-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
+        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-accentRed flex items-center justify-center mb-4">
+                <i class="ph ph-sign-out text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2">Sign Out</h3>
+            <p class="text-gray-500 dark:text-gray-400 mb-6 text-sm">Are you sure you want to sign out of the admin portal?</p>
+            <div class="flex w-full gap-3">
+                <button onclick="hideLogoutModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors">
+                    Cancel
+                </button>
+                <button onclick="confirmLogout()" class="flex-1 py-2.5 rounded-xl bg-accentRed hover:bg-accentRedHover text-white font-medium transition-colors shadow-lg shadow-red-500/30">
+                    Yes, Sign Out
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- JavaScript Logic & Firebase Integration -->
     <script type="module">
@@ -580,9 +598,18 @@
             }
         });
 
-        window.logoutAdmin = async function() {
+        window.showLogoutModal = function() {
+            document.getElementById('logout-modal').classList.remove('hidden');
+        };
+
+        window.hideLogoutModal = function() {
+            document.getElementById('logout-modal').classList.add('hidden');
+        };
+
+        window.confirmLogout = async function() {
+            hideLogoutModal();
             await signOut(auth);
-        }
+        };
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
@@ -934,6 +961,11 @@
 
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal();
+        });
+
+        const logoutModal = document.getElementById('logout-modal');
+        logoutModal.addEventListener('click', (e) => {
+            if (e.target === logoutModal) hideLogoutModal();
         });
 
         function showToast(message, type = 'info') {
