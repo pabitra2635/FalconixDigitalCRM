@@ -224,8 +224,8 @@
                     <!-- Dashboard View -->
                     <section id="view-dashboard" class="view-section active">
                         <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Overview</h2>
-                        <div class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8 flex items-center">
-                            Welcome back, &nbsp;<span id="greeting-name" class="font-semibold text-gray-800 dark:text-gray-200"></span><span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-0.5">|</span>
+                        <div class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8 flex items-center min-h-[1.5rem]">
+                            <span id="greeting-text" class="font-semibold text-gray-800 dark:text-gray-200"></span><span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
                         <!-- Stats Cards -->
@@ -619,19 +619,70 @@
             await signOut(auth);
         };
 
-        // Typewriter Effect Function
-        function startTypewriter(name) {
-            const nameEl = document.getElementById('greeting-name');
-            nameEl.innerText = '';
-            let i = 0;
-            function type() {
-                if (i < name.length) {
-                    nameEl.innerHTML += name.charAt(i);
-                    i++;
-                    setTimeout(type, 100); // 100ms per character
-                }
+        // Continuous Typewriter Effect Functions
+        function getTimeBasedGreetings(name) {
+            const hour = new Date().getHours();
+            let timeGreeting = '';
+            let emoji = '';
+
+            if (hour >= 5 && hour < 12) {
+                timeGreeting = 'Good morning';
+                emoji = '🌅';
+            } else if (hour >= 12 && hour < 17) {
+                timeGreeting = 'Good afternoon';
+                emoji = '☀️';
+            } else if (hour >= 17 && hour < 21) {
+                timeGreeting = 'Good evening';
+                emoji = '🌇';
+            } else {
+                timeGreeting = 'Good night';
+                emoji = '🌙';
             }
-            // Add a small delay before starting to type
+
+            return [
+                `${timeGreeting}, ${name}! ${emoji}`,
+                `Welcome back, ${name}! 👋`,
+                `Let's manage your clients ✨`,
+                `Have a great day ahead! 🚀`
+            ];
+        }
+
+        let typewriterTimeout;
+        function startContinuousTypewriter(name) {
+            const phrases = getTimeBasedGreetings(name);
+            const el = document.getElementById('greeting-text');
+            let phraseIndex = 0;
+            let charIndex = 0;
+            let isDeleting = false;
+
+            function type() {
+                const currentPhrase = phrases[phraseIndex];
+                
+                if (isDeleting) {
+                    el.innerText = currentPhrase.substring(0, charIndex - 1);
+                    charIndex--;
+                } else {
+                    el.innerText = currentPhrase.substring(0, charIndex + 1);
+                    charIndex++;
+                }
+
+                let typingSpeed = isDeleting ? 30 : 70; // typing and deleting speeds
+
+                if (!isDeleting && charIndex === currentPhrase.length) {
+                    typingSpeed = 2500; // Pause at the end of a phrase before erasing
+                    isDeleting = true;
+                } else if (isDeleting && charIndex === 0) {
+                    isDeleting = false;
+                    phraseIndex = (phraseIndex + 1) % phrases.length;
+                    typingSpeed = 500; // Pause before typing the next phrase
+                }
+
+                typewriterTimeout = setTimeout(type, typingSpeed);
+            }
+
+            // Reset and start typing
+            clearTimeout(typewriterTimeout);
+            el.innerText = '';
             setTimeout(type, 300);
         }
 
@@ -649,9 +700,9 @@
                         appWrapper.classList.remove('hidden');
                         appWrapper.classList.add('flex');
                         
-                        // Trigger Typewriter Greeting
+                        // Trigger Continuous Typewriter Greeting
                         const adminName = ADMIN_NAMES[user.email.toLowerCase()] || 'Admin';
-                        startTypewriter(adminName);
+                        startContinuousTypewriter(adminName);
                         
                     }, 500);
 
