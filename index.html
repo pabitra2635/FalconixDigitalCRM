@@ -225,7 +225,9 @@
                     <section id="view-dashboard" class="view-section active">
                         <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Overview</h2>
                         <div class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8 flex items-center min-h-[1.5rem]">
-                            <span id="greeting-text" class="font-bold bg-gradient-to-r text-transparent bg-clip-text pr-1"></span><span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
+                            <span id="greeting-text" class="font-bold bg-gradient-to-r text-transparent bg-clip-text"></span>
+                            <span id="greeting-emoji" class="mr-1 inline-block"></span>
+                            <span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
                         <!-- Stats Cards -->
@@ -652,16 +654,16 @@
             }
 
             return [
-                `${timeGreeting}, ${name}! ${emoji}`,
-                `Welcome back, ${name}! 👋`,
-                `Nice to see you working today! 💻`,
-                `Let's manage your clients ✨`,
-                `Have a wonderful day! 🌟`,
-                `Ready to crush your goals? 💪`,
-                `Let's grow your agency! 📈`,
-                `Hope you're having a productive day! 💼`,
-                `You're doing great! 🏆`,
-                `Have a great day ahead! 🚀`
+                { text: `${timeGreeting}, ${name}!`, emoji: emoji },
+                { text: `Welcome back, ${name}!`, emoji: '👋' },
+                { text: `Nice to see you working today!`, emoji: '💻' },
+                { text: `Let's manage your clients`, emoji: '✨' },
+                { text: `Have a wonderful day!`, emoji: '🌟' },
+                { text: `Ready to crush your goals?`, emoji: '💪' },
+                { text: `Let's grow your agency!`, emoji: '📈' },
+                { text: `Hope you're having a productive day!`, emoji: '💼' },
+                { text: `You're doing great!`, emoji: '🏆' },
+                { text: `Have a great day ahead!`, emoji: '🚀' }
             ];
         }
 
@@ -669,6 +671,7 @@
         function startContinuousTypewriter(name) {
             const phrases = getTimeBasedGreetings(name);
             const el = document.getElementById('greeting-text');
+            const emojiEl = document.getElementById('greeting-emoji');
             let phraseIndex = 0;
             let charIndex = 0;
             let isDeleting = false;
@@ -683,22 +686,27 @@
             ];
 
             // Initialize first color
-            el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text pr-1 " + gradients[0];
+            el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text " + gradients[0];
 
             function type() {
                 const currentPhrase = phrases[phraseIndex];
+                const fullText = currentPhrase.text;
                 
                 if (isDeleting) {
-                    el.innerText = currentPhrase.substring(0, charIndex - 1);
+                    el.innerText = fullText.substring(0, charIndex - 1);
                     charIndex--;
+                    emojiEl.innerText = ''; // Hide emoji when deleting
                 } else {
-                    el.innerText = currentPhrase.substring(0, charIndex + 1);
+                    el.innerText = fullText.substring(0, charIndex + 1);
                     charIndex++;
+                    if (charIndex === fullText.length) {
+                        emojiEl.innerText = '\u00A0' + currentPhrase.emoji; // Show emoji at the end with a space
+                    }
                 }
 
                 let typingSpeed = isDeleting ? 30 : 70; // typing and deleting speeds
 
-                if (!isDeleting && charIndex === currentPhrase.length) {
+                if (!isDeleting && charIndex === fullText.length) {
                     typingSpeed = 2500; // Pause at the end of a phrase before erasing
                     isDeleting = true;
                 } else if (isDeleting && charIndex === 0) {
@@ -707,7 +715,7 @@
                     typingSpeed = 500; // Pause before typing the next phrase
                     
                     // Switch to a new gradient color for the next greeting
-                    el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text pr-1 " + gradients[phraseIndex % gradients.length];
+                    el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text " + gradients[phraseIndex % gradients.length];
                 }
 
                 typewriterTimeout = setTimeout(type, typingSpeed);
@@ -716,6 +724,7 @@
             // Reset and start typing
             clearTimeout(typewriterTimeout);
             el.innerText = '';
+            if (emojiEl) emojiEl.innerText = '';
             setTimeout(type, 300);
         }
 
