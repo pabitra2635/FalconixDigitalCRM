@@ -939,7 +939,9 @@
             document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
             document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
 
-            const totalProfit = clientsList.reduce((sum, client) => sum + (Number(client.price) || 0), 0);
+            const totalProfit = clientsList
+                .filter(client => client.status === 'Completed')
+                .reduce((sum, client) => sum + (Number(client.price) || 0), 0);
             const profitEl = document.getElementById('stat-total-profit');
             
             // Format to Indian numbering system without decimals to save space
