@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Falconix Digital CRM</title>
+    <title>Falconix Digital CRM - Secure Login</title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -39,6 +39,18 @@
         body {
             font-family: 'Inter', sans-serif;
             transition: background-color 0.3s ease, color 0.3s ease;
+            
+            /* Prevent text selection globally to deter copying */
+            -webkit-user-select: none; /* Safari */
+            -ms-user-select: none; /* IE 10 and IE 11 */
+            user-select: none; /* Standard syntax */
+        }
+
+        /* Allow selection and copying inside input fields and textareas */
+        input, textarea, select {
+            -webkit-user-select: auto;
+            -ms-user-select: auto;
+            user-select: auto;
         }
 
         /* Glassmorphism Utilities */
@@ -103,7 +115,7 @@
             border-top: 3px solid #ff1a1a;
             width: 24px;
             height: 24px;
-            -webkit-animation: spin 1s linear infinite; /* Safari */
+            -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
         @keyframes spin {
@@ -112,305 +124,331 @@
         }
     </style>
 </head>
-<body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-screen flex overflow-hidden">
+<body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-screen overflow-hidden relative">
 
-    <!-- Mobile Overlay for Sidebar -->
-    <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity"></div>
+    <!-- LOGIN SCREEN -->
+    <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
+        <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center">
+            <div class="w-16 h-16 rounded-2xl bg-accentRed flex items-center justify-center text-white font-bold text-3xl mb-4 shadow-lg shadow-red-500/30">
+                F
+            </div>
+            <h1 class="text-2xl font-bold tracking-wide mb-1">Falconix<span class="text-accentRed">CRM</span></h1>
+            <p class="text-sm text-gray-500 dark:text-gray-400 mb-8 text-center">Admin Portal - Restricted Access</p>
 
-    <!-- Sidebar Navigation -->
-    <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 glass bg-lightBg/95 dark:bg-darkBg/95 border-r border-gray-200 dark:border-gray-800 flex flex-col h-full z-40 shrink-0">
-        <div class="p-6 flex items-center justify-between md:justify-start gap-3">
-            <div class="flex items-center gap-3">
-                <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-xl">
-                    F
+            <div class="w-full space-y-4">
+                <button id="google-login-btn" class="w-full bg-white dark:bg-gray-100 text-gray-800 hover:bg-gray-50 dark:hover:bg-gray-200 py-3 rounded-xl font-medium transition-colors shadow-lg flex items-center justify-center gap-3 mt-2">
+                    <svg class="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>
+                    Sign in with Google
+                </button>
+            </div>
+            <div id="login-error" class="mt-4 text-accentRed text-sm font-medium hidden text-center"></div>
+        </div>
+    </div>
+
+    <!-- APP CONTENT (Hidden until logged in) -->
+    <div id="app-wrapper" class="hidden h-screen w-full flex-col md:flex-row">
+        <!-- Mobile Overlay for Sidebar -->
+        <div id="mobile-overlay" onclick="toggleMobileMenu()" class="fixed inset-0 bg-black/50 backdrop-blur-sm z-30 hidden md:hidden transition-opacity"></div>
+
+        <!-- Sidebar Navigation -->
+        <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 glass bg-lightBg/95 dark:bg-darkBg/95 border-r border-gray-200 dark:border-gray-800 flex flex-col h-full z-40 shrink-0">
+            <div class="p-6 flex items-center justify-between md:justify-start gap-3">
+                <div class="flex items-center gap-3">
+                    <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-xl">
+                        F
+                    </div>
+                    <h1 class="text-xl font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
                 </div>
-                <h1 class="text-xl font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
+                <!-- Mobile Close Button inside sidebar -->
+                <button onclick="toggleMobileMenu()" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-accentRed">
+                    <i class="ph ph-x text-lg"></i>
+                </button>
             </div>
-            <!-- Mobile Close Button inside sidebar -->
-            <button onclick="toggleMobileMenu()" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 text-gray-500 hover:text-accentRed">
-                <i class="ph ph-x text-lg"></i>
-            </button>
-        </div>
 
-        <nav class="flex-1 px-4 mt-2 md:mt-6 space-y-2 overflow-y-auto">
-            <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50 text-accentRed bg-gray-100 dark:bg-gray-800/50">
-                <i class="ph ph-squares-four text-xl"></i>
-                <span class="font-medium">Dashboard</span>
-            </button>
-            <button onclick="navigate('client-list')" id="nav-client-list" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
-                <i class="ph ph-users text-xl"></i>
-                <span class="font-medium">Clients</span>
-            </button>
-            <button onclick="navigate('add-client')" id="nav-add-client" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
-                <i class="ph ph-user-plus text-xl"></i>
-                <span class="font-medium">Add Client</span>
-            </button>
-        </nav>
+            <nav class="flex-1 px-4 mt-2 md:mt-6 space-y-2 overflow-y-auto">
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50 text-accentRed bg-gray-100 dark:bg-gray-800/50">
+                    <i class="ph ph-squares-four text-xl"></i>
+                    <span class="font-medium">Dashboard</span>
+                </button>
+                <button onclick="navigate('client-list')" id="nav-client-list" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
+                    <i class="ph ph-users text-xl"></i>
+                    <span class="font-medium">Clients</span>
+                </button>
+                <button onclick="navigate('add-client')" id="nav-add-client" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
+                    <i class="ph ph-user-plus text-xl"></i>
+                    <span class="font-medium">Add Client</span>
+                </button>
+            </nav>
 
-        <div class="p-6 border-t border-gray-200 dark:border-gray-800">
-            <button onclick="toggleTheme()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
-                <span class="font-medium" id="theme-text">Dark Mode</span>
-                <i class="ph ph-moon text-xl" id="theme-icon"></i>
-            </button>
-            <div class="mt-4 flex items-center gap-2 text-sm text-gray-500">
-                <div id="auth-status-dot" class="w-2 h-2 rounded-full bg-yellow-500"></div>
-                <span id="auth-status-text">Connecting...</span>
+            <div class="p-6 border-t border-gray-200 dark:border-gray-800 space-y-3">
+                <button onclick="toggleTheme()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800/50 transition-colors">
+                    <span class="font-medium text-sm" id="theme-text">Dark Mode</span>
+                    <i class="ph ph-moon text-lg" id="theme-icon"></i>
+                </button>
+                <button onclick="logoutAdmin()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-red-50 dark:bg-red-900/10 text-accentRed hover:bg-red-100 dark:hover:bg-red-900/30 transition-colors">
+                    <span class="font-medium text-sm">Sign Out</span>
+                    <i class="ph ph-sign-out text-lg"></i>
+                </button>
+                <div class="flex items-center gap-2 px-2">
+                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
+                    <span id="logged-in-email" class="text-xs text-gray-500 truncate w-full">admin</span>
+                </div>
             </div>
-        </div>
-    </aside>
+        </aside>
 
-    <!-- Main Content Area Wrapper -->
-    <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
-        
-        <!-- Mobile Top Header -->
-        <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-200 dark:border-gray-800 z-20">
-            <div class="flex items-center gap-2">
-                <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-lg">F</div>
-                <h1 class="text-lg font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
-            </div>
-            <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-accentRed transition-colors">
-                <i class="ph ph-list text-2xl"></i>
-            </button>
-        </header>
-
-        <!-- Main Scrollable Area -->
-        <main class="flex-1 overflow-y-auto relative">
+        <!-- Main Content Area Wrapper -->
+        <div class="flex-1 flex flex-col min-w-0 h-screen overflow-hidden relative">
             
-            <!-- Global Loading Overlay -->
-            <div id="global-loader" class="absolute inset-0 bg-lightBg/80 dark:bg-darkBg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center">
-                <div class="loader mb-4 w-12 h-12 border-4 text-accentRed"></div>
-                <p class="font-medium animate-pulse">Loading Falconix CRM...</p>
-            </div>
+            <!-- Mobile Top Header -->
+            <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-200 dark:border-gray-800 z-20">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded bg-accentRed flex items-center justify-center text-white font-bold text-lg">F</div>
+                    <h1 class="text-lg font-bold tracking-wide">Falconix<span class="text-accentRed">CRM</span></h1>
+                </div>
+                <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 hover:text-accentRed transition-colors">
+                    <i class="ph ph-list text-2xl"></i>
+                </button>
+            </header>
 
-            <div class="p-4 md:p-8 max-w-6xl mx-auto">
+            <!-- Main Scrollable Area -->
+            <main class="flex-1 overflow-y-auto relative">
                 
-                <!-- Dashboard View -->
-                <section id="view-dashboard" class="view-section active">
-                    <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Overview</h2>
-                    <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8">Welcome back to Falconix Digital CRM.</p>
+                <!-- Global Loading Overlay -->
+                <div id="global-loader" class="absolute inset-0 bg-lightBg/80 dark:bg-darkBg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
+                    <div class="loader mb-4 w-12 h-12 border-4 text-accentRed"></div>
+                    <p class="font-medium animate-pulse">Syncing Database...</p>
+                </div>
 
-                    <!-- Stats Cards -->
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10">
-                        <div class="glass p-5 md:p-6 rounded-2xl">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Total Clients</p>
-                                    <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-total-clients">0</h3>
-                                </div>
-                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed">
-                                    <i class="ph ph-users text-xl md:text-2xl"></i>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="glass p-5 md:p-6 rounded-2xl">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Active Projects</p>
-                                    <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-active-projects">0</h3>
-                                </div>
-                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
-                                    <i class="ph ph-kanban text-xl md:text-2xl"></i>
+                <div class="p-4 md:p-8 max-w-6xl mx-auto">
+                    
+                    <!-- Dashboard View -->
+                    <section id="view-dashboard" class="view-section active">
+                        <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Overview</h2>
+                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 mb-6 md:mb-8">Welcome back to Falconix Digital CRM.</p>
+
+                        <!-- Stats Cards -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-8 md:mb-10">
+                            <div class="glass p-5 md:p-6 rounded-2xl">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Total Clients</p>
+                                        <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-total-clients">0</h3>
+                                    </div>
+                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed">
+                                        <i class="ph ph-users text-xl md:text-2xl"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-
-                        <div class="glass p-5 md:p-6 rounded-2xl sm:col-span-2 md:col-span-1">
-                            <div class="flex justify-between items-start">
-                                <div>
-                                    <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Completed</p>
-                                    <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-completed-projects">0</h3>
-                                </div>
-                                <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
-                                    <i class="ph ph-check-circle text-xl md:text-2xl"></i>
+                            
+                            <div class="glass p-5 md:p-6 rounded-2xl">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Active Projects</p>
+                                        <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-active-projects">0</h3>
+                                    </div>
+                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
+                                        <i class="ph ph-kanban text-xl md:text-2xl"></i>
+                                    </div>
                                 </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- Recent Clients -->
-                    <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Recently Added</h3>
-                    <div class="glass rounded-2xl overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
-                                <thead>
-                                    <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
-                                        <th class="p-3 md:p-4 font-medium">Client</th>
-                                        <th class="p-3 md:p-4 font-medium">Business</th>
-                                        <th class="p-3 md:p-4 font-medium">Status</th>
-                                        <th class="p-3 md:p-4 font-medium text-right">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="recent-clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
-                                    <!-- Populated by JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Client List View -->
-                <section id="view-client-list" class="view-section">
-                    <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
-                        <div>
-                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Client Database</h2>
-                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Manage and track your agency's clients.</p>
-                        </div>
-                        <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
-                            <i class="ph ph-plus text-lg"></i> New Client
-                        </button>
-                    </div>
-
-                    <!-- Filters -->
-                    <div class="glass p-3 md:p-4 rounded-2xl mb-4 md:mb-6 flex flex-col sm:flex-row gap-3 md:gap-4">
-                        <div class="flex-1 relative">
-                            <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
-                            <input type="text" id="search-input" placeholder="Search by name or phone..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 pl-11 pr-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                        </div>
-                        <div class="w-full sm:w-48">
-                            <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
-                                <option value="All">All Statuses</option>
-                                <option value="Pending">Pending</option>
-                                <option value="Active">Active</option>
-                                <option value="Completed">Completed</option>
-                            </select>
-                        </div>
-                    </div>
-
-                    <!-- Client Table -->
-                    <div class="glass rounded-2xl overflow-hidden shadow-sm">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
-                                <thead>
-                                    <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
-                                        <th class="p-3 md:p-4 font-medium">Name & Contact</th>
-                                        <th class="p-3 md:p-4 font-medium">Business Detail</th>
-                                        <th class="p-3 md:p-4 font-medium">Price</th>
-                                        <th class="p-3 md:p-4 font-medium">Status</th>
-                                        <th class="p-3 md:p-4 font-medium text-right">Actions</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
-                                    <!-- Populated by JS -->
-                                </tbody>
-                            </table>
-                        </div>
-                        
-                        <!-- Empty State -->
-                        <div id="empty-state" class="hidden flex-col items-center justify-center py-12 md:py-16 text-center px-4">
-                            <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
-                                <i class="ph ph-users-slash text-2xl md:text-3xl text-gray-400"></i>
-                            </div>
-                            <h3 class="text-lg md:text-xl font-medium mb-2">No clients found</h3>
-                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-sm mx-auto">Add your first client to start managing your projects, or adjust your search filters.</p>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- Add/Edit Client View -->
-                <section id="view-add-client" class="view-section max-w-3xl mx-auto">
-                    <div class="mb-6 md:mb-8">
-                        <button onclick="navigate('client-list')" class="text-gray-500 hover:text-accentRed transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
-                            <i class="ph ph-arrow-left"></i> Back to list
-                        </button>
-                        <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2" id="form-title">Add New Client</h2>
-                        <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Enter the details for the new project.</p>
-                    </div>
-
-                    <form id="client-form" class="glass p-5 md:p-8 rounded-2xl shadow-sm space-y-5 md:space-y-6">
-                        <input type="hidden" id="client-id">
-                        
-                        <!-- Basic Info -->
-                        <div>
-                            <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-user text-accentRed"></i> Basic Information</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client Name *</label>
-                                    <input type="text" id="form-name" required class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Business Type</label>
-                                    <input type="text" id="form-business" placeholder="e.g. CA Firm, Real Estate" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                            <div class="glass p-5 md:p-6 rounded-2xl sm:col-span-2 md:col-span-1">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Completed</p>
+                                        <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-completed-projects">0</h3>
+                                    </div>
+                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
+                                        <i class="ph ph-check-circle text-xl md:text-2xl"></i>
+                                    </div>
                                 </div>
                             </div>
                         </div>
 
-                        <hr class="border-gray-200 dark:border-gray-800">
-
-                        <!-- Contact Info -->
-                        <div>
-                            <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-address-book text-accentRed"></i> Contact Details</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Phone Number *</label>
-                                    <input type="tel" id="form-phone" required placeholder="+91 98765 43210" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
-                                    <input type="email" id="form-email" placeholder="client@example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                                </div>
+                        <!-- Recent Clients -->
+                        <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Recently Added</h3>
+                        <div class="glass rounded-2xl overflow-hidden shadow-sm">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
+                                    <thead>
+                                        <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
+                                            <th class="p-3 md:p-4 font-medium">Client</th>
+                                            <th class="p-3 md:p-4 font-medium">Business</th>
+                                            <th class="p-3 md:p-4 font-medium">Status</th>
+                                            <th class="p-3 md:p-4 font-medium text-right">Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="recent-clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
+                    </section>
 
-                        <hr class="border-gray-200 dark:border-gray-800">
-
-                        <!-- Project Details -->
-                        <div>
-                            <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-globe text-accentRed"></i> Project Specifications</h3>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Website Type</label>
-                                    <select id="form-website" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
-                                        <option value="Landing Page">Landing Page</option>
-                                        <option value="Corporate">Corporate / Business</option>
-                                        <option value="E-Commerce">E-Commerce</option>
-                                        <option value="Portfolio">Portfolio</option>
-                                        <option value="Web App">Custom Web App</option>
-                                        <option value="Other">Other</option>
-                                    </select>
-                                </div>
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Live Website URL</label>
-                                    <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                                </div>
+                    <!-- Client List View -->
+                    <section id="view-client-list" class="view-section">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-6 md:mb-8 gap-4">
+                            <div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Client Database</h2>
+                                <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Manage and track your agency's clients.</p>
                             </div>
-                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Price (₹) *</label>
-                                    <input type="number" id="form-price" required min="0" step="0.01" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                                </div>
-                                <div>
-                                    <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
-                                    <select id="form-status" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
-                                        <option value="Pending">Pending</option>
-                                        <option value="Active">Active</option>
-                                        <option value="Completed">Completed</option>
-                                    </select>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div>
-                            <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Internal Notes</label>
-                            <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific requirements..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
-                        </div>
-
-                        <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
-                            <button type="button" onclick="navigate('client-list')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-center">
-                                Cancel
-                            </button>
-                            <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentRed hover:bg-accentRedHover text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
-                                <i class="ph ph-floppy-disk text-lg"></i> Save Client
+                            <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
+                                <i class="ph ph-plus text-lg"></i> New Client
                             </button>
                         </div>
-                    </form>
-                </section>
-            </div>
-        </main>
+
+                        <!-- Filters -->
+                        <div class="glass p-3 md:p-4 rounded-2xl mb-4 md:mb-6 flex flex-col sm:flex-row gap-3 md:gap-4">
+                            <div class="flex-1 relative">
+                                <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 text-lg"></i>
+                                <input type="text" id="search-input" placeholder="Search by name or phone..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 pl-11 pr-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                            </div>
+                            <div class="w-full sm:w-48">
+                                <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                    <option value="All">All Statuses</option>
+                                    <option value="Pending">Pending</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Completed">Completed</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Client Table -->
+                        <div class="glass rounded-2xl overflow-hidden shadow-sm">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[700px]">
+                                    <thead>
+                                        <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
+                                            <th class="p-3 md:p-4 font-medium">Name & Contact</th>
+                                            <th class="p-3 md:p-4 font-medium">Business Detail</th>
+                                            <th class="p-3 md:p-4 font-medium">Price</th>
+                                            <th class="p-3 md:p-4 font-medium">Status</th>
+                                            <th class="p-3 md:p-4 font-medium text-right">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
+                                        <!-- Populated by JS -->
+                                    </tbody>
+                                </table>
+                            </div>
+                            
+                            <!-- Empty State -->
+                            <div id="empty-state" class="hidden flex-col items-center justify-center py-12 md:py-16 text-center px-4">
+                                <div class="w-16 h-16 md:w-20 md:h-20 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-4">
+                                    <i class="ph ph-users-slash text-2xl md:text-3xl text-gray-400"></i>
+                                </div>
+                                <h3 class="text-lg md:text-xl font-medium mb-2">No clients found</h3>
+                                <p class="text-sm md:text-base text-gray-500 dark:text-gray-400 max-w-sm mx-auto">Add your first client to start managing your projects, or adjust your search filters.</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Add/Edit Client View -->
+                    <section id="view-add-client" class="view-section max-w-3xl mx-auto">
+                        <div class="mb-6 md:mb-8">
+                            <button onclick="navigate('client-list')" class="text-gray-500 hover:text-accentRed transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
+                                <i class="ph ph-arrow-left"></i> Back to list
+                            </button>
+                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2" id="form-title">Add New Client</h2>
+                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Enter the details for the new project.</p>
+                        </div>
+
+                        <form id="client-form" class="glass p-5 md:p-8 rounded-2xl shadow-sm space-y-5 md:space-y-6">
+                            <input type="hidden" id="client-id">
+                            
+                            <!-- Basic Info -->
+                            <div>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-user text-accentRed"></i> Basic Information</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Client Name *</label>
+                                        <input type="text" id="form-name" required class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Business Type</label>
+                                        <input type="text" id="form-business" placeholder="e.g. CA Firm, Real Estate" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-200 dark:border-gray-800">
+
+                            <!-- Contact Info -->
+                            <div>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-address-book text-accentRed"></i> Contact Details</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Phone Number *</label>
+                                        <input type="tel" id="form-phone" required placeholder="+91 98765 43210" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Email Address</label>
+                                        <input type="email" id="form-email" placeholder="client@example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <hr class="border-gray-200 dark:border-gray-800">
+
+                            <!-- Project Details -->
+                            <div>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-globe text-accentRed"></i> Project Specifications</h3>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Website Type</label>
+                                        <select id="form-website" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                            <option value="Landing Page">Landing Page</option>
+                                            <option value="Corporate">Corporate / Business</option>
+                                            <option value="E-Commerce">E-Commerce</option>
+                                            <option value="Portfolio">Portfolio</option>
+                                            <option value="Web App">Custom Web App</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Live Website URL</label>
+                                        <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Price (₹) *</label>
+                                        <input type="number" id="form-price" required min="0" step="0.01" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
+                                        <select id="form-status" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                            <option value="Pending">Pending</option>
+                                            <option value="Active">Active</option>
+                                            <option value="Completed">Completed</option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Internal Notes</label>
+                                <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific requirements..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
+                            </div>
+
+                            <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
+                                <button type="button" onclick="navigate('client-list')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-center">
+                                    Cancel
+                                </button>
+                                <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentRed hover:bg-accentRedHover text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+                                    <i class="ph ph-floppy-disk text-lg"></i> Save Client
+                                </button>
+                            </div>
+                        </form>
+                    </section>
+                </div>
+            </main>
+        </div>
     </div>
 
     <!-- Toast Notification Container -->
-    <div id="toast-container" class="fixed bottom-4 md:bottom-6 right-4 md:right-6 left-4 md:left-auto z-50 flex flex-col gap-3 pointer-events-none"></div>
+    <div id="toast-container" class="fixed bottom-4 md:bottom-6 right-4 md:right-6 left-4 md:left-auto z-[200] flex flex-col gap-3 pointer-events-none"></div>
 
     <!-- Client Detail Modal (Glassmorphism) -->
     <div id="client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
@@ -471,197 +509,147 @@
 
     <!-- JavaScript Logic & Firebase Integration -->
     <script type="module">
-        // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-analytics.js";
 
-        // Environment Variables Configuration
+        // IMPORTANT: The specific allowed emails per your request
+        const ALLOWED_EMAILS = [
+            'pabitramondal2635@gmail.com',
+            'sujata232005@gmail.com'
+        ];
+
         const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
         
-        // Your web app's Firebase configuration
         const firebaseConfig = {
             apiKey: "AIzaSyBLhHBKVBY57_KLrT9IpQ9o7alYlEioovA",
             authDomain: "falconixdigitalbusiness.firebaseapp.com",
             projectId: "falconixdigitalbusiness",
             storageBucket: "falconixdigitalbusiness.firebasestorage.app",
             messagingSenderId: "835356453879",
-            appId: "1:835356453879:web:b321312b9b9e0881b35cf2",
-            measurementId: "G-TDHSGQF5SV"
+            appId: "1:835356453879:web:b321312b9b9e0881b35cf2"
         };
 
-        // Initialize Firebase
         const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
         const auth = getAuth(app);
         const db = getFirestore(app);
+        const googleProvider = new GoogleAuthProvider();
+        googleProvider.setCustomParameters({ prompt: 'select_account' });
 
-        // State Management
         let currentUser = null;
         let clientsList = [];
         let unsubscribeClients = null;
 
-        // DOM Elements
+        // UI Elements
+        const loginWrapper = document.getElementById('login-wrapper');
+        const appWrapper = document.getElementById('app-wrapper');
         const globalLoader = document.getElementById('global-loader');
-        const authStatusDot = document.getElementById('auth-status-dot');
-        const authStatusText = document.getElementById('auth-status-text');
+        const loggedInEmailText = document.getElementById('logged-in-email');
+        const googleLoginBtn = document.getElementById('google-login-btn');
+        const loginError = document.getElementById('login-error');
 
-        // Initialize Authentication First (Mandatory Rule)
-        async function initAuth() {
+        // Store default button HTML to restore it after loading state
+        const defaultBtnHtml = googleLoginBtn.innerHTML;
+
+        // --- AUTHENTICATION LOGIC ---
+
+        googleLoginBtn.addEventListener('click', async () => {
+            loginError.classList.add('hidden');
+            googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
+
             try {
-                if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                    await signInWithCustomToken(auth, __initial_auth_token);
-                } else {
-                    await signInAnonymously(auth);
-                }
-            } catch (error) {
-                console.error("Authentication Error:", error);
-                showToast("Failed to connect to secure server.", "error");
-                authStatusDot.className = "w-2 h-2 rounded-full bg-red-500";
-                authStatusText.innerText = "Connection Failed";
-            }
-        }
+                const result = await signInWithPopup(auth, googleProvider);
+                const user = result.user;
 
-        // Auth State Observer
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                currentUser = user;
-                authStatusDot.className = "w-2 h-2 rounded-full bg-green-500";
-                authStatusText.innerText = "Connected Securely";
-                setupDatabaseListener();
-            } else {
-                currentUser = null;
-                if(unsubscribeClients) unsubscribeClients();
+                // 1st Security Layer: Check immediately after popup returns
+                if (!ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+                    await signOut(auth);
+                    loginError.innerText = "Access Denied: Email not authorized.";
+                    loginError.classList.remove('hidden');
+                }
+                // (The onAuthStateChanged listener handles the successful transition)
+            } catch (error) {
+                console.error("Login failed:", error);
+                loginError.innerText = "Login process was cancelled or failed.";
+                loginError.classList.remove('hidden');
+            } finally {
+                // Restore button appearance if login failed/was rejected
+                if (!currentUser) {
+                    googleLoginBtn.innerHTML = defaultBtnHtml;
+                }
             }
         });
 
-        // Setup Firestore Listener
+        window.logoutAdmin = async function() {
+            await signOut(auth);
+        }
+
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // 2nd Security Layer: Double-check post-login
+                if (ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+                    currentUser = user;
+                    loggedInEmailText.innerText = user.email;
+                    
+                    // Show App UI, Hide Login
+                    loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                    setTimeout(() => {
+                        loginWrapper.classList.add('hidden');
+                        appWrapper.classList.remove('hidden');
+                        appWrapper.classList.add('flex');
+                    }, 500);
+
+                    setupDatabaseListener();
+                } else {
+                    // Kick out if somehow logged in with wrong email
+                    await signOut(auth);
+                    loginError.innerText = "Unauthorized email detected. Session terminated.";
+                    loginError.classList.remove('hidden');
+                    googleLoginBtn.innerHTML = defaultBtnHtml;
+                }
+            } else {
+                currentUser = null;
+                if(unsubscribeClients) unsubscribeClients();
+                
+                // Show Login UI, Hide App
+                appWrapper.classList.add('hidden');
+                appWrapper.classList.remove('flex');
+                loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+                googleLoginBtn.innerHTML = defaultBtnHtml;
+            }
+        });
+
+        // --- DATABASE LOGIC (SHARED DATA PATH) ---
         function setupDatabaseListener() {
             if (!currentUser) return;
+            globalLoader.classList.remove('hidden');
 
-            // Strict Path Rule Implementation
-            const clientsRef = collection(db, 'artifacts', appId, 'users', currentUser.uid, 'clients');
+            const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
 
-            // No complex queries as per rules, fetch all and filter in JS memory
             unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
                 clientsList = [];
                 snapshot.forEach((doc) => {
                     clientsList.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Sort by creation date descending in memory
+                // Sort by creation date descending
                 clientsList.sort((a, b) => b.createdAt - a.createdAt);
                 
                 updateDashboardStats();
                 renderClientTable();
                 
-                // Hide loader on first data fetch
-                if(!globalLoader.classList.contains('hidden')) {
-                    globalLoader.classList.add('hidden');
-                }
+                globalLoader.classList.add('hidden');
             }, (error) => {
                 console.error("Firestore Error:", error);
-                showToast("Database sync error.", "error");
+                showToast("Database sync error. Check rules.", "error");
+                globalLoader.classList.add('hidden');
             });
         }
-
-        // --- Mobile Menu Toggle Logic ---
-        window.toggleMobileMenu = function() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            
-            if (sidebar.classList.contains('-translate-x-full')) {
-                // Open menu
-                sidebar.classList.remove('-translate-x-full');
-                overlay.classList.remove('hidden');
-            } else {
-                // Close menu
-                sidebar.classList.add('-translate-x-full');
-                overlay.classList.add('hidden');
-            }
-        };
-
-        // --- UI Navigation Logic ---
-        window.navigate = function(viewId) {
-            // Hide all views
-            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
-            
-            // Reset nav buttons
-            document.querySelectorAll('.nav-btn').forEach(el => {
-                el.classList.remove('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
-                el.classList.add('text-gray-600', 'dark:text-gray-400');
-            });
-
-            // Show selected view
-            document.getElementById(`view-${viewId}`).classList.add('active');
-            
-            // Highlight selected nav
-            const navBtn = document.getElementById(`nav-${viewId}`);
-            if(navBtn) {
-                navBtn.classList.remove('text-gray-600', 'dark:text-gray-400');
-                navBtn.classList.add('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
-            }
-
-            // Close mobile menu if open
-            if (window.innerWidth < 768) {
-                document.getElementById('sidebar').classList.add('-translate-x-full');
-                document.getElementById('mobile-overlay').classList.add('hidden');
-            }
-
-            // Reset form if navigating to Add Client fresh
-            if(viewId === 'add-client' && document.getElementById('client-id').value === "") {
-                document.getElementById('form-title').innerText = "Add New Client";
-                document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Save Client';
-                document.getElementById('client-form').reset();
-            }
-
-            // Render table if navigating to list to apply potential filter changes
-            if(viewId === 'client-list' || viewId === 'dashboard') {
-                renderClientTable();
-            }
-        };
-
-        // --- Theme Toggle Logic ---
-        window.toggleTheme = function() {
-            const html = document.documentElement;
-            const themeText = document.getElementById('theme-text');
-            const themeIcon = document.getElementById('theme-icon');
-
-            if (html.classList.contains('dark')) {
-                html.classList.remove('dark');
-                localStorage.setItem('theme', 'light');
-                themeText.innerText = 'Dark Mode';
-                themeIcon.classList.replace('ph-sun', 'ph-moon');
-            } else {
-                html.classList.add('dark');
-                localStorage.setItem('theme', 'dark');
-                themeText.innerText = 'Light Mode';
-                themeIcon.classList.replace('ph-moon', 'ph-sun');
-            }
-        };
-
-        // Initialize theme from localStorage
-        if (localStorage.getItem('theme') === 'light') {
-            document.documentElement.classList.remove('dark');
-            document.getElementById('theme-text').innerText = 'Dark Mode';
-            document.getElementById('theme-icon').classList.replace('ph-sun', 'ph-moon');
-        } else {
-            // Default is dark
-            document.getElementById('theme-icon').classList.replace('ph-moon', 'ph-sun');
-            document.getElementById('theme-text').innerText = 'Light Mode';
-        }
-
-
-        // --- CRUD Operations ---
 
         // Save (Add/Update) Client
         document.getElementById('client-form').addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (!currentUser) {
-                showToast("Not authenticated.", "error");
-                return;
-            }
+            if (!currentUser) return;
 
             const idField = document.getElementById('client-id').value;
             const isEditing = !!idField;
@@ -682,28 +670,93 @@
             };
 
             try {
-                // Save to Firestore
-                const docRef = doc(db, 'artifacts', appId, 'users', currentUser.uid, 'clients', clientId);
+                // Save to shared path
+                const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
                 await setDoc(docRef, clientData);
                 
                 showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
                 
-                // Reset form and navigate
                 document.getElementById('client-form').reset();
                 document.getElementById('client-id').value = "";
                 navigate('client-list');
-                
             } catch (error) {
                 console.error("Save Error:", error);
                 showToast("Failed to save client.", "error");
             }
         });
 
-        // Edit Client (Populate Form)
+
+        // --- UI Logic (Navigation, Theme, Rendering) remains the same ---
+        window.toggleMobileMenu = function() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            if (sidebar.classList.contains('-translate-x-full')) {
+                sidebar.classList.remove('-translate-x-full');
+                overlay.classList.remove('hidden');
+            } else {
+                sidebar.classList.add('-translate-x-full');
+                overlay.classList.add('hidden');
+            }
+        };
+
+        window.navigate = function(viewId) {
+            document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
+            document.querySelectorAll('.nav-btn').forEach(el => {
+                el.classList.remove('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
+                el.classList.add('text-gray-600', 'dark:text-gray-400');
+            });
+            document.getElementById(`view-${viewId}`).classList.add('active');
+            
+            const navBtn = document.getElementById(`nav-${viewId}`);
+            if(navBtn) {
+                navBtn.classList.remove('text-gray-600', 'dark:text-gray-400');
+                navBtn.classList.add('text-accentRed', 'bg-gray-100', 'dark:bg-gray-800/50');
+            }
+
+            if (window.innerWidth < 768) {
+                document.getElementById('sidebar').classList.add('-translate-x-full');
+                document.getElementById('mobile-overlay').classList.add('hidden');
+            }
+
+            if(viewId === 'add-client' && document.getElementById('client-id').value === "") {
+                document.getElementById('form-title').innerText = "Add New Client";
+                document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Save Client';
+                document.getElementById('client-form').reset();
+            }
+            if(viewId === 'client-list' || viewId === 'dashboard') {
+                renderClientTable();
+            }
+        };
+
+        window.toggleTheme = function() {
+            const html = document.documentElement;
+            const themeText = document.getElementById('theme-text');
+            const themeIcon = document.getElementById('theme-icon');
+            if (html.classList.contains('dark')) {
+                html.classList.remove('dark');
+                localStorage.setItem('theme', 'light');
+                themeText.innerText = 'Dark Mode';
+                themeIcon.classList.replace('ph-sun', 'ph-moon');
+            } else {
+                html.classList.add('dark');
+                localStorage.setItem('theme', 'dark');
+                themeText.innerText = 'Light Mode';
+                themeIcon.classList.replace('ph-moon', 'ph-sun');
+            }
+        };
+
+        if (localStorage.getItem('theme') === 'light') {
+            document.documentElement.classList.remove('dark');
+            document.getElementById('theme-text').innerText = 'Dark Mode';
+            document.getElementById('theme-icon').classList.replace('ph-sun', 'ph-moon');
+        } else {
+            document.getElementById('theme-icon').classList.replace('ph-moon', 'ph-sun');
+            document.getElementById('theme-text').innerText = 'Light Mode';
+        }
+
         window.editClient = function(id) {
             const client = clientsList.find(c => c.id === id);
             if(!client) return;
-
             document.getElementById('client-id').value = client.id;
             document.getElementById('form-name').value = client.name;
             document.getElementById('form-business').value = client.business;
@@ -714,17 +767,12 @@
             document.getElementById('form-price').value = client.price;
             document.getElementById('form-status').value = client.status;
             document.getElementById('form-notes').value = client.notes;
-
             document.getElementById('form-title').innerText = "Edit Client Details";
             document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Update Client';
-            
             closeModal();
             navigate('add-client');
         };
 
-        // --- Rendering Logic ---
-
-        // Helper: Get status badge styling
         function getStatusBadge(status) {
             switch(status) {
                 case 'Pending': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500 border border-yellow-200 dark:border-yellow-800';
@@ -734,25 +782,17 @@
             }
         }
 
-        // Render Dashboard Data
         function updateDashboardStats() {
-            const total = clientsList.length;
-            const active = clientsList.filter(c => c.status === 'Active').length;
-            const completed = clientsList.filter(c => c.status === 'Completed').length;
+            document.getElementById('stat-total-clients').innerText = clientsList.length;
+            document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
+            document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
 
-            document.getElementById('stat-total-clients').innerText = total;
-            document.getElementById('stat-active-projects').innerText = active;
-            document.getElementById('stat-completed-projects').innerText = completed;
-
-            // Render Recent 5
             const recentBody = document.getElementById('recent-clients-tbody');
             recentBody.innerHTML = '';
-            
             clientsList.slice(0, 5).forEach(client => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer";
                 tr.onclick = () => openModal(client.id);
-                
                 tr.innerHTML = `
                     <td class="p-3 md:p-4">
                         <p class="font-medium">${client.name}</p>
@@ -760,9 +800,7 @@
                     </td>
                     <td class="p-3 md:p-4 text-xs md:text-sm">${client.business || '-'}</td>
                     <td class="p-3 md:p-4">
-                        <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">
-                            ${client.status}
-                        </span>
+                        <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
                     </td>
                     <td class="p-3 md:p-4 text-right">
                         <button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-400 hover:text-accentRed transition-colors p-1 md:p-2">
@@ -774,14 +812,12 @@
             });
         }
 
-        // Render Full Client List with Filters (In-Memory Processing)
         function renderClientTable() {
             const tbody = document.getElementById('clients-tbody');
             const emptyState = document.getElementById('empty-state');
             const searchQ = document.getElementById('search-input').value.toLowerCase();
             const statusQ = document.getElementById('filter-status').value;
 
-            // Filter in memory
             const filtered = clientsList.filter(client => {
                 const matchSearch = client.name.toLowerCase().includes(searchQ) || client.phone.includes(searchQ);
                 const matchStatus = statusQ === 'All' || client.status === statusQ;
@@ -789,7 +825,6 @@
             });
 
             tbody.innerHTML = '';
-
             if (filtered.length === 0) {
                 tbody.parentElement.classList.add('hidden');
                 emptyState.classList.remove('hidden');
@@ -802,7 +837,6 @@
                 filtered.forEach(client => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors md:group";
-                    
                     tr.innerHTML = `
                         <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
                             <div class="flex items-center gap-2 md:gap-3">
@@ -823,9 +857,7 @@
                             ₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
                         </td>
                         <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
-                            <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">
-                                ${client.status}
-                            </span>
+                            <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
                         </td>
                         <td class="p-3 md:p-4 text-right">
                             <div class="flex items-center justify-end gap-2 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
@@ -843,14 +875,10 @@
             }
         }
 
-        // Attach event listeners to filters
         document.getElementById('search-input').addEventListener('input', renderClientTable);
         document.getElementById('filter-status').addEventListener('change', renderClientTable);
 
-
-        // --- Modal Logic ---
         const modal = document.getElementById('client-modal');
-        
         window.openModal = function(id) {
             const client = clientsList.find(c => c.id === id);
             if(!client) return;
@@ -881,7 +909,6 @@
             statusEl.innerText = client.status;
             statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
 
-            // Setup action buttons
             const cleanPhone = client.phone.replace(/[^0-9]/g, '');
             document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
             document.getElementById('modal-edit-btn').onclick = () => editClient(id);
@@ -893,17 +920,13 @@
             modal.classList.add('hidden');
         };
 
-        // Close modal on outside click
         modal.addEventListener('click', (e) => {
             if (e.target === modal) closeModal();
         });
 
-
-        // --- Toast Notification System ---
         function showToast(message, type = 'info') {
             const container = document.getElementById('toast-container');
             const toast = document.createElement('div');
-            
             let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
             let icon = 'ph-info';
             
@@ -915,15 +938,12 @@
                 icon = 'ph-warning-circle';
             }
 
-            // pointer-events-auto restores clicking the toast if we want to, but mainly stops container from blocking clicks
             toast.className = `toast-enter flex items-center gap-3 px-4 py-3 rounded-xl shadow-xl ${bgClass} w-full md:w-auto md:min-w-[250px] pointer-events-auto`;
             toast.innerHTML = `
                 <i class="ph ${icon} text-xl"></i>
                 <span class="font-medium text-sm">${message}</span>
             `;
-
             container.appendChild(toast);
-
             setTimeout(() => {
                 toast.style.opacity = '0';
                 toast.style.transform = 'translateX(100%)';
@@ -932,9 +952,24 @@
             }, 3000);
         }
 
-        // Start Application
-        initAuth();
+    </script>
 
+    <!-- Anti-Inspect & Anti-Copy Security Script -->
+    <script>
+        document.addEventListener('contextmenu', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+        });
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'F12' || e.keyCode === 123) e.preventDefault();
+            if (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i')) e.preventDefault();
+            if (e.ctrlKey && e.shiftKey && (e.key === 'J' || e.key === 'j')) e.preventDefault();
+            if (e.ctrlKey && e.shiftKey && (e.key === 'C' || e.key === 'c')) e.preventDefault();
+            if (e.ctrlKey && (e.key === 'U' || e.key === 'u')) e.preventDefault();
+            if (e.ctrlKey && (e.key === 'S' || e.key === 's')) e.preventDefault();
+        });
+        document.addEventListener('copy', function(e) {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'TEXTAREA') e.preventDefault();
+        });
     </script>
 </body>
 </html>
