@@ -214,7 +214,7 @@
             <main class="flex-1 overflow-y-auto relative">
                 
                 <!-- Global Loading Overlay -->
-                <div id="global-loader" class="absolute inset-0 bg-lightBg/80 dark:bg-darkBg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden">
+                <div id="global-loader" class="absolute inset-0 bg-lightBg/80 dark:bg-darkBg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden transition-opacity duration-300">
                     <div class="loader mb-4 w-12 h-12 border-4 text-accentRed"></div>
                     <p class="font-medium animate-pulse">Syncing Database...</p>
                 </div>
@@ -436,8 +436,8 @@
                                 <button type="button" onclick="navigate('client-list')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-medium text-gray-600 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors text-center">
                                     Cancel
                                 </button>
-                                <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentRed hover:bg-accentRedHover text-white px-6 py-2.5 rounded-xl font-medium transition-colors shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
-                                    <i class="ph ph-floppy-disk text-lg"></i> Save Client
+                                <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentRed hover:bg-accentRedHover text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+                                    <i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>
                                 </button>
                             </div>
                         </form>
@@ -651,9 +651,16 @@
             e.preventDefault();
             if (!currentUser) return;
 
+            const submitBtn = document.getElementById('form-submit-btn');
+            const originalBtnHtml = submitBtn.innerHTML;
             const idField = document.getElementById('client-id').value;
             const isEditing = !!idField;
             const clientId = isEditing ? idField : crypto.randomUUID();
+
+            // Show Saving Animation
+            submitBtn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> <span>${isEditing ? 'Updating...' : 'Saving...'}</span>`;
+            submitBtn.disabled = true;
+            submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
 
             const clientData = {
                 name: document.getElementById('form-name').value.trim(),
@@ -682,6 +689,11 @@
             } catch (error) {
                 console.error("Save Error:", error);
                 showToast("Failed to save client.", "error");
+            } finally {
+                // Restore Button State
+                submitBtn.innerHTML = originalBtnHtml;
+                submitBtn.disabled = false;
+                submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         });
 
@@ -720,7 +732,7 @@
 
             if(viewId === 'add-client' && document.getElementById('client-id').value === "") {
                 document.getElementById('form-title').innerText = "Add New Client";
-                document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Save Client';
+                document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>';
                 document.getElementById('client-form').reset();
             }
             if(viewId === 'client-list' || viewId === 'dashboard') {
@@ -768,7 +780,7 @@
             document.getElementById('form-status').value = client.status;
             document.getElementById('form-notes').value = client.notes;
             document.getElementById('form-title').innerText = "Edit Client Details";
-            document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> Update Client';
+            document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Update Client</span>';
             closeModal();
             navigate('add-client');
         };
