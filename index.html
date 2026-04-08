@@ -128,6 +128,17 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
+
+        /* Kanban Column Scroll Area */
+        .kanban-col-scroll::-webkit-scrollbar {
+            width: 4px;
+        }
+        .kanban-column {
+            transition: background-color 0.2s ease;
+        }
+        .kanban-column.drag-over {
+            background-color: rgba(255, 26, 26, 0.05);
+        }
     </style>
 </head>
 <body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
@@ -171,6 +182,10 @@
                 <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50 text-accentRed bg-gray-100 dark:bg-gray-800/50">
                     <i class="ph ph-squares-four text-xl"></i>
                     <span class="font-medium">Dashboard</span>
+                </button>
+                <button onclick="navigate('board')" id="nav-board" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
+                    <i class="ph ph-kanban text-xl"></i>
+                    <span class="font-medium">Board</span>
                 </button>
                 <button onclick="navigate('client-list')" id="nav-client-list" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
                     <i class="ph ph-users text-xl"></i>
@@ -232,53 +247,103 @@
                             <span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
-                        <!-- Stats Cards -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
-                            <div class="glass p-5 md:p-6 rounded-2xl">
+                        <!-- Stats Cards Grid -->
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8 md:mb-10">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Total Clients</p>
-                                        <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-total-clients">0</h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Clients</p>
+                                        <h3 class="text-2xl md:text-3xl font-bold mt-2" id="stat-total-clients">0</h3>
                                     </div>
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed">
-                                        <i class="ph ph-users text-xl md:text-2xl"></i>
+                                    <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-600 dark:text-gray-400 shrink-0">
+                                        <i class="ph ph-users text-xl"></i>
                                     </div>
                                 </div>
                             </div>
                             
-                            <div class="glass p-5 md:p-6 rounded-2xl">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Active Projects</p>
-                                        <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-active-projects">0</h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Active Projects</p>
+                                        <h3 class="text-2xl md:text-3xl font-bold mt-2" id="stat-active-projects">0</h3>
                                     </div>
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500">
-                                        <i class="ph ph-kanban text-xl md:text-2xl"></i>
+                                    <div class="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-500 shrink-0">
+                                        <i class="ph ph-kanban text-xl"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="glass p-5 md:p-6 rounded-2xl">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Completed</p>
-                                        <h3 class="text-3xl md:text-4xl font-bold mt-2" id="stat-completed-projects">0</h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Completed</p>
+                                        <h3 class="text-2xl md:text-3xl font-bold mt-2" id="stat-completed-projects">0</h3>
                                     </div>
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500">
-                                        <i class="ph ph-check-circle text-xl md:text-2xl"></i>
+                                    <div class="w-10 h-10 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center text-green-500 shrink-0">
+                                        <i class="ph ph-check-circle text-xl"></i>
                                     </div>
                                 </div>
                             </div>
 
-                            <div class="glass p-5 md:p-6 rounded-2xl">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-xs md:text-sm text-gray-500 dark:text-gray-400 font-medium">Total Profit</p>
-                                        <h3 class="text-2xl md:text-3xl font-bold mt-2 truncate max-w-[120px]" id="stat-total-profit" title="0">₹0</h3>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Total Profit</p>
+                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate" id="stat-total-profit" title="0">₹0</h3>
                                     </div>
-                                    <div class="w-10 h-10 md:w-12 md:h-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0">
-                                        <i class="ph ph-currency-inr text-xl md:text-2xl"></i>
+                                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-500 shrink-0">
+                                        <i class="ph ph-currency-inr text-xl"></i>
                                     </div>
+                                </div>
+                            </div>
+
+                            <!-- NEW: Pending Payments Card -->
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs text-gray-500 dark:text-gray-400 font-medium">Pending Payments</p>
+                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-accentRed" id="stat-pending-payments" title="0">₹0</h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed shrink-0">
+                                        <i class="ph ph-wallet text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Split View: Recent & Deadlines -->
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8 md:mb-10">
+                            
+                            <!-- Left: Recent Clients -->
+                            <div class="lg:col-span-2 flex flex-col">
+                                <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Recently Added</h3>
+                                <div class="glass rounded-2xl overflow-hidden shadow-sm flex-1">
+                                    <div class="overflow-x-auto">
+                                        <table class="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
+                                            <thead>
+                                                <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
+                                                    <th class="p-3 md:p-4 font-medium">Client</th>
+                                                    <th class="p-3 md:p-4 font-medium">Business</th>
+                                                    <th class="p-3 md:p-4 font-medium">Finance</th>
+                                                    <th class="p-3 md:p-4 font-medium">Status</th>
+                                                    <th class="p-3 md:p-4 font-medium text-right">Action</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="recent-clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
+                                                <!-- Populated by JS -->
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Right: Upcoming Deadlines -->
+                            <div class="lg:col-span-1 flex flex-col">
+                                <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2">
+                                    Upcoming Deadlines <i class="ph ph-alarm text-accentRed animate-pulse"></i>
+                                </h3>
+                                <div class="glass rounded-2xl p-4 shadow-sm flex-1 flex flex-col gap-3" id="upcoming-deadlines-list">
+                                    <!-- Populated by JS -->
                                 </div>
                             </div>
                         </div>
@@ -308,26 +373,57 @@
                                 </div>
                             </div>
                         </div>
+                    </section>
 
-                        <!-- Recent Clients -->
-                        <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4">Recently Added</h3>
-                        <div class="glass rounded-2xl overflow-hidden shadow-sm">
-                            <div class="overflow-x-auto">
-                                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[600px]">
-                                    <thead>
-                                        <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
-                                            <th class="p-3 md:p-4 font-medium">Client</th>
-                                            <th class="p-3 md:p-4 font-medium">Business</th>
-                                            <th class="p-3 md:p-4 font-medium">Price</th>
-                                            <th class="p-3 md:p-4 font-medium">Status</th>
-                                            <th class="p-3 md:p-4 font-medium text-right">Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="recent-clients-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base">
-                                        <!-- Populated by JS -->
-                                    </tbody>
-                                </table>
+                    <!-- Kanban Board View -->
+                    <section id="view-board" class="view-section h-full flex flex-col">
+                        <div class="mb-6 md:mb-8">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Project Board</h2>
+                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Drag and drop projects to update their status instantly.</p>
+                        </div>
+                        
+                        <div class="flex overflow-x-auto gap-4 md:gap-6 pb-6 snap-x kanban-col-scroll flex-1 items-start">
+                            
+                            <!-- Column: Pending -->
+                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
+                                ondragover="allowDrop(event)" ondrop="drop(event, 'Pending')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-bold flex items-center gap-2 text-yellow-700 dark:text-yellow-500"><div class="w-2 h-2 rounded-full bg-yellow-500"></div> Pending</h3>
+                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-pending">0</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Pending"></div>
                             </div>
+
+                            <!-- Column: Active -->
+                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
+                                ondragover="allowDrop(event)" ondrop="drop(event, 'Active')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-bold flex items-center gap-2 text-blue-700 dark:text-blue-500"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Active</h3>
+                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-active">0</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Active"></div>
+                            </div>
+
+                            <!-- Column: Completed -->
+                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
+                                ondragover="allowDrop(event)" ondrop="drop(event, 'Completed')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-bold flex items-center gap-2 text-green-700 dark:text-green-500"><div class="w-2 h-2 rounded-full bg-green-500"></div> Completed</h3>
+                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-completed">0</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Completed"></div>
+                            </div>
+
+                            <!-- Column: Cancelled -->
+                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
+                                ondragover="allowDrop(event)" ondrop="drop(event, 'Cancelled')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                                <div class="flex items-center justify-between mb-4">
+                                    <h3 class="font-bold flex items-center gap-2 text-slate-700 dark:text-slate-400"><div class="w-2 h-2 rounded-full bg-slate-500"></div> Cancelled</h3>
+                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-cancelled">0</span>
+                                </div>
+                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Cancelled"></div>
+                            </div>
+
                         </div>
                     </section>
 
@@ -368,8 +464,8 @@
                                         <tr class="bg-gray-100 dark:bg-gray-800/50 text-gray-500 dark:text-gray-400 text-xs md:text-sm border-b border-gray-200 dark:border-gray-700">
                                             <th class="p-3 md:p-4 font-medium">Name & Contact</th>
                                             <th class="p-3 md:p-4 font-medium">Business Detail</th>
-                                            <th class="p-3 md:p-4 font-medium">Price</th>
-                                            <th class="p-3 md:p-4 font-medium">Status</th>
+                                            <th class="p-3 md:p-4 font-medium">Finance Status</th>
+                                            <th class="p-3 md:p-4 font-medium">Progress</th>
                                             <th class="p-3 md:p-4 font-medium text-right">Actions</th>
                                         </tr>
                                     </thead>
@@ -391,7 +487,7 @@
                     </section>
 
                     <!-- Add/Edit Client View -->
-                    <section id="view-add-client" class="view-section max-w-3xl mx-auto">
+                    <section id="view-add-client" class="view-section max-w-4xl mx-auto">
                         <div class="mb-6 md:mb-8">
                             <button onclick="navigate('client-list')" class="text-gray-500 hover:text-accentRed transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
                                 <i class="ph ph-arrow-left"></i> Back to list
@@ -449,9 +545,9 @@
 
                             <hr class="border-gray-200 dark:border-gray-800">
 
-                            <!-- Project Details -->
+                            <!-- Project Details & Finance -->
                             <div>
-                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-globe text-accentRed"></i> Project Specifications</h3>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2"><i class="ph ph-globe text-accentRed"></i> Project Details & Finance</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Website Type</label>
@@ -469,10 +565,18 @@
                                         <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
+                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5">
                                     <div>
-                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Price (₹) *</label>
-                                        <input type="number" id="form-price" required min="0" step="0.01" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Total Price (₹) *</label>
+                                        <input type="number" id="form-price" required min="0" step="0.01" placeholder="e.g. 20000" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Advance Paid (₹)</label>
+                                        <input type="number" id="form-advance" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Target Deadline</label>
+                                        <input type="date" id="form-deadline" class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Status</label>
@@ -487,8 +591,8 @@
                             </div>
                             
                             <div>
-                                <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Internal Notes</label>
-                                <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific requirements..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
+                                <label class="block text-xs md:text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">Internal Notes / To-Do</label>
+                                <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific tasks..." class="w-full bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
                             </div>
 
                             <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-200 dark:border-gray-800">
@@ -511,7 +615,7 @@
 
     <!-- Client Detail Modal (Glassmorphism) -->
     <div id="client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-2xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
             <div class="p-4 md:p-6 border-b border-gray-200 dark:border-gray-800 flex justify-between items-center bg-gray-50/50 dark:bg-gray-900/50">
                 <h3 class="text-xl md:text-2xl font-bold truncate pr-4" id="modal-name">Client Name</h3>
                 <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center hover:bg-red-100 hover:text-red-500 transition-colors shrink-0">
@@ -519,7 +623,7 @@
                 </button>
             </div>
             <div class="p-4 md:p-6 overflow-y-auto flex-1">
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6 mb-5 md:mb-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 md:gap-6 mb-5 md:mb-6">
                     <div>
                         <p class="text-xs md:text-sm text-gray-500">Business Type</p>
                         <p class="font-medium text-base md:text-lg" id="modal-business">-</p>
@@ -529,6 +633,13 @@
                         <span id="modal-status" class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300"></span>
                     </div>
                     <div>
+                        <p class="text-xs md:text-sm text-gray-500">Target Deadline</p>
+                        <p class="font-medium flex items-center gap-1" id="modal-deadline">-</p>
+                    </div>
+                    
+                    <hr class="col-span-full border-gray-200 dark:border-gray-800">
+                    
+                    <div>
                         <p class="text-xs md:text-sm text-gray-500">Phone</p>
                         <p class="font-medium" id="modal-phone">-</p>
                     </div>
@@ -537,24 +648,40 @@
                         <p class="font-medium truncate" id="modal-email">-</p>
                     </div>
                     <div>
-                        <p class="text-xs md:text-sm text-gray-500">Website Type</p>
-                        <p class="font-medium" id="modal-website">-</p>
-                    </div>
-                    <div>
-                        <p class="text-xs md:text-sm text-gray-500">Live Link</p>
-                        <a id="modal-website-url" target="_blank" class="font-medium break-all">-</a>
-                    </div>
-                    <div>
                         <p class="text-xs md:text-sm text-gray-500">Client Source</p>
                         <p class="font-medium text-indigo-500" id="modal-source">-</p>
                     </div>
+
+                    <hr class="col-span-full border-gray-200 dark:border-gray-800">
+
                     <div>
-                        <p class="text-xs md:text-sm text-gray-500">Project Value</p>
-                        <p class="font-medium text-accentRed text-lg" id="modal-price">-</p>
+                        <p class="text-xs md:text-sm text-gray-500">Website Type</p>
+                        <p class="font-medium" id="modal-website">-</p>
+                    </div>
+                    <div class="md:col-span-2">
+                        <p class="text-xs md:text-sm text-gray-500">Live Link</p>
+                        <a id="modal-website-url" target="_blank" class="font-medium break-all">-</a>
                     </div>
                 </div>
+
+                <!-- Financial Block -->
+                <div class="bg-gray-100/50 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-200 dark:border-gray-800 flex justify-between items-center mb-6">
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-500">Total Price</p>
+                        <p class="font-bold text-lg" id="modal-price">-</p>
+                    </div>
+                    <div class="text-center">
+                        <p class="text-xs md:text-sm text-gray-500">Advance Paid</p>
+                        <p class="font-bold text-lg text-green-600 dark:text-green-500" id="modal-advance">-</p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xs md:text-sm text-gray-500">Balance Due</p>
+                        <p class="font-bold text-xl text-accentRed" id="modal-balance">-</p>
+                    </div>
+                </div>
+
                 <div class="bg-gray-50 dark:bg-gray-800/50 p-3 md:p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <p class="text-xs md:text-sm text-gray-500 mb-1.5 md:mb-2 font-medium">Notes</p>
+                    <p class="text-xs md:text-sm text-gray-500 mb-1.5 md:mb-2 font-medium">Notes & Tasks</p>
                     <p class="whitespace-pre-wrap text-sm" id="modal-notes">-</p>
                 </div>
             </div>
@@ -592,7 +719,7 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
         // IMPORTANT: The specific allowed emails per your request
         const ALLOWED_EMAILS = [
@@ -838,6 +965,7 @@
                 updateDashboardStats();
                 updateCharts();
                 renderClientTable();
+                renderKanbanBoard();
                 
                 globalLoader.classList.add('hidden');
             }, (error) => {
@@ -872,6 +1000,8 @@
                 website: document.getElementById('form-website').value,
                 websiteUrl: document.getElementById('form-website-url').value.trim(),
                 price: parseFloat(document.getElementById('form-price').value) || 0,
+                advance: parseFloat(document.getElementById('form-advance').value) || 0,
+                deadline: document.getElementById('form-deadline').value || null,
                 status: document.getElementById('form-status').value,
                 notes: document.getElementById('form-notes').value.trim(),
                 createdAt: isEditing ? clientsList.find(c => c.id === clientId)?.createdAt || Date.now() : Date.now(),
@@ -945,6 +1075,9 @@
             if(viewId === 'client-list' || viewId === 'dashboard') {
                 renderClientTable();
             }
+            if(viewId === 'board') {
+                renderKanbanBoard();
+            }
         };
 
         window.toggleTheme = function() {
@@ -994,7 +1127,9 @@
             document.getElementById('form-email').value = client.email;
             document.getElementById('form-website').value = client.website;
             document.getElementById('form-website-url').value = client.websiteUrl || '';
-            document.getElementById('form-price').value = client.price;
+            document.getElementById('form-price').value = client.price || '';
+            document.getElementById('form-advance').value = client.advance || '';
+            document.getElementById('form-deadline').value = client.deadline || '';
             document.getElementById('form-status').value = client.status;
             document.getElementById('form-notes').value = client.notes;
             
@@ -1020,28 +1155,43 @@
             const totalProfit = clientsList
                 .filter(client => client.status === 'Completed')
                 .reduce((sum, client) => sum + (Number(client.price) || 0), 0);
-            const profitEl = document.getElementById('stat-total-profit');
             
-            // Format to Indian numbering system without decimals to save space
-            const formattedProfit = '₹' + totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
-            profitEl.innerText = formattedProfit;
-            profitEl.title = formattedProfit; // Added title for hover if it gets truncated
+            const totalPendingPayments = clientsList
+                .filter(client => client.status !== 'Completed' && client.status !== 'Cancelled')
+                .reduce((sum, client) => sum + Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0)), 0);
 
+            const formattedProfit = '₹' + totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            const formattedPending = '₹' + totalPendingPayments.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+            
+            const profitEl = document.getElementById('stat-total-profit');
+            profitEl.innerText = formattedProfit;
+            profitEl.title = formattedProfit; 
+            
+            const pendingEl = document.getElementById('stat-pending-payments');
+            pendingEl.innerText = formattedPending;
+            pendingEl.title = formattedPending;
+
+            // Render Recent Clients
             const recentBody = document.getElementById('recent-clients-tbody');
             recentBody.innerHTML = '';
             clientsList.slice(0, 5).forEach(client => {
                 const tr = document.createElement('tr');
                 tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer";
                 tr.onclick = () => openModal(client.id);
+                
+                const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
+                let financeHtml = `<div>
+                    <p class="font-medium text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
+                    ${balance > 0 ? `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>` : `<p class="text-[10px] md:text-xs text-green-500 font-medium">Fully Paid</p>`}
+                </div>`;
+
                 tr.innerHTML = `
                     <td class="p-3 md:p-4">
                         <p class="font-medium">${client.name}</p>
                         <p class="text-[10px] md:text-xs text-gray-500">${client.phone}</p>
                     </td>
                     <td class="p-3 md:p-4 text-xs md:text-sm">${client.business || '-'}</td>
-                    <td class="p-3 md:p-4 font-medium text-sm md:text-base">
-                        ₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
-                    </td>
+                    <td class="p-3 md:p-4">${financeHtml}</td>
                     <td class="p-3 md:p-4">
                         <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
                     </td>
@@ -1052,6 +1202,167 @@
                     </td>
                 `;
                 recentBody.appendChild(tr);
+            });
+
+            // Render Upcoming Deadlines widget
+            const deadlinesContainer = document.getElementById('upcoming-deadlines-list');
+            deadlinesContainer.innerHTML = '';
+            const nowTime = new Date().setHours(0,0,0,0);
+            
+            const upcoming = clientsList
+                .filter(c => (c.status === 'Pending' || c.status === 'Active') && c.deadline)
+                .sort((a,b) => new Date(a.deadline) - new Date(b.deadline))
+                .slice(0, 5);
+
+            if(upcoming.length === 0) {
+                deadlinesContainer.innerHTML = '<div class="flex-1 flex flex-col items-center justify-center text-center py-4"><i class="ph ph-check-circle text-3xl text-green-500 mb-2"></i><p class="text-sm text-gray-500 dark:text-gray-400">No active deadlines!<br>You are all caught up.</p></div>';
+            } else {
+                upcoming.forEach(client => {
+                    const d = new Date(client.deadline);
+                    const diffDays = Math.ceil((d - nowTime) / (1000 * 60 * 60 * 24));
+                    let colorClass = 'text-gray-500 dark:text-gray-400';
+                    let iconClass = 'text-gray-400';
+                    
+                    if(diffDays < 0) { 
+                        colorClass = 'text-red-600 dark:text-red-500 font-bold'; 
+                        iconClass = 'text-red-600 dark:text-red-500'; 
+                    } else if(diffDays <= 3) { 
+                        colorClass = 'text-orange-500 font-bold'; 
+                        iconClass = 'text-orange-500'; 
+                    }
+
+                    deadlinesContainer.innerHTML += `
+                        <div class="bg-gray-50 dark:bg-gray-800/50 p-3 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-100 dark:border-gray-800/50" onclick="openModal('${client.id}')">
+                            <div class="flex justify-between items-start mb-1">
+                                <p class="font-semibold text-sm truncate pr-2">${client.name}</p>
+                                <div class="flex items-center gap-1 text-[11px] md:text-xs shrink-0 ${colorClass}">
+                                    <i class="ph ph-clock ${iconClass}"></i>
+                                    <span>${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</span>
+                                </div>
+                            </div>
+                            <p class="text-xs text-gray-500 truncate">${client.business || 'N/A'}</p>
+                        </div>
+                    `;
+                });
+            }
+        }
+
+        // --- Kanban Drag & Drop Implementation ---
+        window.allowDrop = function(ev) {
+            ev.preventDefault();
+        };
+
+        window.dragEnter = function(ev) {
+            ev.preventDefault();
+            const col = ev.currentTarget;
+            col.classList.add('drag-over');
+        };
+
+        window.dragLeave = function(ev) {
+            const col = ev.currentTarget;
+            col.classList.remove('drag-over');
+        };
+
+        window.drag = function(ev, id) {
+            ev.dataTransfer.setData("clientId", id);
+        };
+
+        window.drop = async function(ev, newStatus) {
+            ev.preventDefault();
+            const col = ev.currentTarget;
+            col.classList.remove('drag-over');
+
+            const clientId = ev.dataTransfer.getData("clientId");
+            if (!clientId) return;
+
+            const client = clientsList.find(c => c.id === clientId);
+            if (client && client.status !== newStatus) {
+                
+                // Save old status for rollback if failed
+                const oldStatus = client.status;
+                
+                // Optimistic UI Update for instant feeling
+                client.status = newStatus;
+                renderKanbanBoard();
+                updateDashboardStats();
+                renderClientTable();
+
+                try {
+                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+                    await updateDoc(docRef, {
+                        status: newStatus,
+                        updatedAt: Date.now()
+                    });
+                } catch(err) {
+                    console.error("Drag Drop Error", err);
+                    showToast('Failed to update project status.', 'error');
+                    // Rollback
+                    client.status = oldStatus;
+                    renderKanbanBoard();
+                    updateDashboardStats();
+                    renderClientTable();
+                }
+            }
+        };
+
+        function renderKanbanBoard() {
+            const columns = {
+                'Pending': document.getElementById('kanban-Pending'),
+                'Active': document.getElementById('kanban-Active'),
+                'Completed': document.getElementById('kanban-Completed'),
+                'Cancelled': document.getElementById('kanban-Cancelled')
+            };
+
+            // Clear columns safely
+            Object.values(columns).forEach(col => { if(col) col.innerHTML = ''; });
+            const counts = { 'Pending': 0, 'Active': 0, 'Completed': 0, 'Cancelled': 0 };
+
+            clientsList.forEach(client => {
+                const col = columns[client.status];
+                if (!col) return;
+                counts[client.status]++;
+
+                const d = new Date(client.deadline);
+                const diffDays = client.deadline ? Math.ceil((d - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)) : null;
+                let deadlineHtml = '';
+                
+                if(client.deadline && (client.status === 'Pending' || client.status === 'Active')) {
+                    let colorClass = 'text-gray-500 dark:text-gray-400';
+                    if(diffDays < 0) colorClass = 'text-red-600 font-medium';
+                    else if(diffDays <= 3) colorClass = 'text-orange-500 font-medium';
+                    
+                    deadlineHtml = `<div class="text-[10px] md:text-xs mt-3 flex items-center gap-1 ${colorClass}"><i class="ph ph-clock"></i> Due: ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</div>`;
+                }
+
+                const card = document.createElement('div');
+                card.className = "bg-white dark:bg-darkCard p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 cursor-grab hover:shadow-md transition-all relative group";
+                card.draggable = true;
+                card.ondragstart = (e) => window.drag(e, client.id);
+                card.onclick = () => openModal(client.id);
+
+                card.innerHTML = `
+                    <div class="flex justify-between items-start mb-1">
+                        <p class="font-semibold text-sm text-gray-800 dark:text-gray-200 pr-2">${client.name}</p>
+                        <button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-400 hover:text-accentRed lg:opacity-0 lg:group-hover:opacity-100 transition-opacity p-1">
+                            <i class="ph ph-pencil-simple text-sm"></i>
+                        </button>
+                    </div>
+                    <p class="text-xs text-gray-500 mb-3 truncate">${client.business || 'N/A'}</p>
+                    <div class="flex items-center justify-between">
+                        <span class="text-xs font-bold text-accentRed">₹${(client.price || 0).toLocaleString('en-IN')}</span>
+                        <div class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-500">
+                            ${client.name.charAt(0).toUpperCase()}
+                        </div>
+                    </div>
+                    ${deadlineHtml}
+                `;
+                col.appendChild(card);
+            });
+
+            // Update counts in column headers
+            Object.keys(counts).forEach(status => {
+                const countEl = document.getElementById(`count-${status.toLowerCase()}`);
+                if(countEl) countEl.innerText = counts[status];
             });
         }
 
@@ -1214,6 +1525,25 @@
                 filtered.forEach(client => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors";
+                    
+                    const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
+                    let financeHtml = `<div>
+                        <p class="font-medium text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
+                        ${balance > 0 ? `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>` : `<p class="text-[10px] md:text-xs text-green-500 font-medium">Fully Paid</p>`}
+                    </div>`;
+
+                    const d = new Date(client.deadline);
+                    const diffDays = client.deadline ? Math.ceil((d - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)) : null;
+                    let deadlineHtml = '-';
+                    if(client.deadline) {
+                        let colorClass = 'text-gray-500 dark:text-gray-400';
+                        if(client.status !== 'Completed' && client.status !== 'Cancelled') {
+                            if(diffDays < 0) colorClass = 'text-red-500 font-medium';
+                            else if(diffDays <= 3) colorClass = 'text-orange-500 font-medium';
+                        }
+                        deadlineHtml = `<p class="text-xs md:text-sm ${colorClass}"><i class="ph ph-clock"></i> ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>`;
+                    }
+
                     tr.innerHTML = `
                         <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
                             <div class="flex items-center gap-2 md:gap-3">
@@ -1230,11 +1560,12 @@
                             <p class="font-medium">${client.business || 'N/A'}</p>
                             <p class="text-[10px] md:text-xs text-gray-500">${client.website}</p>
                         </td>
-                        <td class="p-3 md:p-4 cursor-pointer font-medium text-sm md:text-base" onclick="openModal('${client.id}')">
-                            ₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}
+                        <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
+                            ${financeHtml}
                         </td>
                         <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
-                            <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
+                            <span class="px-2 py-1 md:px-3 rounded-full text-[10px] md:text-xs font-medium block w-max mb-1 ${getStatusBadge(client.status)}">${client.status}</span>
+                            ${deadlineHtml}
                         </td>
                         <td class="p-3 md:p-4 text-right">
                             <div class="flex items-center justify-end gap-2">
@@ -1280,8 +1611,17 @@
                 urlEl.classList.add('text-gray-800', 'dark:text-gray-200');
             }
 
-            document.getElementById('modal-price').innerText = `₹${client.price.toLocaleString(undefined, {minimumFractionDigits: 2})}`;
-            document.getElementById('modal-notes').innerText = client.notes || 'No notes provided.';
+            // Financials and Deadlines in Modal
+            document.getElementById('modal-price').innerText = `₹${(client.price || 0).toLocaleString('en-IN')}`;
+            document.getElementById('modal-advance').innerText = `₹${(client.advance || 0).toLocaleString('en-IN')}`;
+            const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
+            document.getElementById('modal-balance').innerText = `₹${balance.toLocaleString('en-IN')}`;
+            
+            document.getElementById('modal-deadline').innerHTML = client.deadline 
+                ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` 
+                : 'Not Set';
+
+            document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
             
             const statusEl = document.getElementById('modal-status');
             statusEl.innerText = client.status;
