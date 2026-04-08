@@ -376,17 +376,17 @@
                     </section>
 
                     <!-- Kanban Board View -->
-                    <section id="view-board" class="view-section h-full flex flex-col">
-                        <div class="mb-6 md:mb-8">
-                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Project Board</h2>
-                            <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Drag and drop projects to update their status instantly.</p>
-                        </div>
-                        
-                        <div class="flex overflow-x-auto gap-4 md:gap-6 pb-6 snap-x kanban-col-scroll flex-1 items-start">
+                    <section id="view-board" class="view-section h-full">
+                        <div class="flex flex-col h-full">
+                            <div class="mb-6 md:mb-8 shrink-0">
+                                <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Project Board</h2>
+                                <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Drag and drop projects to update their status instantly.</p>
+                            </div>
                             
-                            <!-- Column: Pending -->
-                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
-                                ondragover="allowDrop(event)" ondrop="drop(event, 'Pending')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
+                            <div class="flex overflow-x-auto gap-4 md:gap-6 pb-6 snap-x kanban-col-scroll flex-1 items-start">
+                                
+                                <!-- Column: Pending -->
+                                <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
                                 <div class="flex items-center justify-between mb-4">
                                     <h3 class="font-bold flex items-center gap-2 text-yellow-700 dark:text-yellow-500"><div class="w-2 h-2 rounded-full bg-yellow-500"></div> Pending</h3>
                                     <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-pending">0</span>
@@ -424,6 +424,7 @@
                                 <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Cancelled"></div>
                             </div>
 
+                        </div>
                         </div>
                     </section>
 
