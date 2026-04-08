@@ -128,17 +128,6 @@
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
         }
-
-        /* Kanban Column Scroll Area */
-        .kanban-col-scroll::-webkit-scrollbar {
-            width: 4px;
-        }
-        .kanban-column {
-            transition: background-color 0.2s ease;
-        }
-        .kanban-column.drag-over {
-            background-color: rgba(255, 26, 26, 0.05);
-        }
     </style>
 </head>
 <body class="bg-lightBg text-gray-800 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
@@ -182,10 +171,6 @@
                 <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50 text-accentRed bg-gray-100 dark:bg-gray-800/50">
                     <i class="ph ph-squares-four text-xl"></i>
                     <span class="font-medium">Dashboard</span>
-                </button>
-                <button onclick="navigate('board')" id="nav-board" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
-                    <i class="ph ph-kanban text-xl"></i>
-                    <span class="font-medium">Board</span>
                 </button>
                 <button onclick="navigate('client-list')" id="nav-client-list" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-100 dark:hover:bg-gray-800/50">
                     <i class="ph ph-users text-xl"></i>
@@ -297,7 +282,7 @@
                                 </div>
                             </div>
 
-                            <!-- NEW: Pending Payments Card -->
+                            <!-- Pending Payments Card -->
                             <div class="glass p-5 rounded-2xl flex flex-col justify-between">
                                 <div class="flex justify-between items-start">
                                     <div>
@@ -372,59 +357,6 @@
                                     <canvas id="sourceChart"></canvas>
                                 </div>
                             </div>
-                        </div>
-                    </section>
-
-                    <!-- Kanban Board View -->
-                    <section id="view-board" class="view-section h-full">
-                        <div class="flex flex-col h-full">
-                            <div class="mb-6 md:mb-8 shrink-0">
-                                <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2">Project Board</h2>
-                                <p class="text-sm md:text-base text-gray-500 dark:text-gray-400">Drag and drop projects to update their status instantly.</p>
-                            </div>
-                            
-                            <div class="flex overflow-x-auto gap-4 md:gap-6 pb-6 snap-x kanban-col-scroll flex-1 items-start">
-                                
-                                <!-- Column: Pending -->
-                                <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
-                                <div class="flex items-center justify-between mb-4">
-                                    <h3 class="font-bold flex items-center gap-2 text-yellow-700 dark:text-yellow-500"><div class="w-2 h-2 rounded-full bg-yellow-500"></div> Pending</h3>
-                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-pending">0</span>
-                                </div>
-                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Pending"></div>
-                            </div>
-
-                            <!-- Column: Active -->
-                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
-                                ondragover="allowDrop(event)" ondrop="drop(event, 'Active')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h3 class="font-bold flex items-center gap-2 text-blue-700 dark:text-blue-500"><div class="w-2 h-2 rounded-full bg-blue-500"></div> Active</h3>
-                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-active">0</span>
-                                </div>
-                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Active"></div>
-                            </div>
-
-                            <!-- Column: Completed -->
-                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
-                                ondragover="allowDrop(event)" ondrop="drop(event, 'Completed')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h3 class="font-bold flex items-center gap-2 text-green-700 dark:text-green-500"><div class="w-2 h-2 rounded-full bg-green-500"></div> Completed</h3>
-                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-completed">0</span>
-                                </div>
-                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Completed"></div>
-                            </div>
-
-                            <!-- Column: Cancelled -->
-                            <div class="kanban-column bg-gray-100/50 dark:bg-gray-800/30 border border-gray-200 dark:border-gray-800 rounded-2xl p-4 w-[300px] flex-shrink-0 snap-center flex flex-col max-h-full"
-                                ondragover="allowDrop(event)" ondrop="drop(event, 'Cancelled')" ondragenter="dragEnter(event)" ondragleave="dragLeave(event)">
-                                <div class="flex items-center justify-between mb-4">
-                                    <h3 class="font-bold flex items-center gap-2 text-slate-700 dark:text-slate-400"><div class="w-2 h-2 rounded-full bg-slate-500"></div> Cancelled</h3>
-                                    <span class="bg-white dark:bg-darkCard px-2 py-0.5 rounded-full text-xs font-medium shadow-sm" id="count-cancelled">0</span>
-                                </div>
-                                <div class="flex-1 overflow-y-auto space-y-3 kanban-col-scroll pr-1 pb-4" id="kanban-Cancelled"></div>
-                            </div>
-
-                        </div>
                         </div>
                     </section>
 
@@ -966,7 +898,6 @@
                 updateDashboardStats();
                 updateCharts();
                 renderClientTable();
-                renderKanbanBoard();
                 
                 globalLoader.classList.add('hidden');
             }, (error) => {
@@ -1075,9 +1006,6 @@
 
             if(viewId === 'client-list' || viewId === 'dashboard') {
                 renderClientTable();
-            }
-            if(viewId === 'board') {
-                renderKanbanBoard();
             }
         };
 
@@ -1246,125 +1174,6 @@
                     `;
                 });
             }
-        }
-
-        // --- Kanban Drag & Drop Implementation ---
-        window.allowDrop = function(ev) {
-            ev.preventDefault();
-        };
-
-        window.dragEnter = function(ev) {
-            ev.preventDefault();
-            const col = ev.currentTarget;
-            col.classList.add('drag-over');
-        };
-
-        window.dragLeave = function(ev) {
-            const col = ev.currentTarget;
-            col.classList.remove('drag-over');
-        };
-
-        window.drag = function(ev, id) {
-            ev.dataTransfer.setData("clientId", id);
-        };
-
-        window.drop = async function(ev, newStatus) {
-            ev.preventDefault();
-            const col = ev.currentTarget;
-            col.classList.remove('drag-over');
-
-            const clientId = ev.dataTransfer.getData("clientId");
-            if (!clientId) return;
-
-            const client = clientsList.find(c => c.id === clientId);
-            if (client && client.status !== newStatus) {
-                
-                // Save old status for rollback if failed
-                const oldStatus = client.status;
-                
-                // Optimistic UI Update for instant feeling
-                client.status = newStatus;
-                renderKanbanBoard();
-                updateDashboardStats();
-                renderClientTable();
-
-                try {
-                    const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
-                    await updateDoc(docRef, {
-                        status: newStatus,
-                        updatedAt: Date.now()
-                    });
-                } catch(err) {
-                    console.error("Drag Drop Error", err);
-                    showToast('Failed to update project status.', 'error');
-                    // Rollback
-                    client.status = oldStatus;
-                    renderKanbanBoard();
-                    updateDashboardStats();
-                    renderClientTable();
-                }
-            }
-        };
-
-        function renderKanbanBoard() {
-            const columns = {
-                'Pending': document.getElementById('kanban-Pending'),
-                'Active': document.getElementById('kanban-Active'),
-                'Completed': document.getElementById('kanban-Completed'),
-                'Cancelled': document.getElementById('kanban-Cancelled')
-            };
-
-            // Clear columns safely
-            Object.values(columns).forEach(col => { if(col) col.innerHTML = ''; });
-            const counts = { 'Pending': 0, 'Active': 0, 'Completed': 0, 'Cancelled': 0 };
-
-            clientsList.forEach(client => {
-                const col = columns[client.status];
-                if (!col) return;
-                counts[client.status]++;
-
-                const d = new Date(client.deadline);
-                const diffDays = client.deadline ? Math.ceil((d - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)) : null;
-                let deadlineHtml = '';
-                
-                if(client.deadline && (client.status === 'Pending' || client.status === 'Active')) {
-                    let colorClass = 'text-gray-500 dark:text-gray-400';
-                    if(diffDays < 0) colorClass = 'text-red-600 font-medium';
-                    else if(diffDays <= 3) colorClass = 'text-orange-500 font-medium';
-                    
-                    deadlineHtml = `<div class="text-[10px] md:text-xs mt-3 flex items-center gap-1 ${colorClass}"><i class="ph ph-clock"></i> Due: ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</div>`;
-                }
-
-                const card = document.createElement('div');
-                card.className = "bg-white dark:bg-darkCard p-4 rounded-xl shadow-sm border border-gray-200 dark:border-gray-700 cursor-grab hover:shadow-md transition-all relative group";
-                card.draggable = true;
-                card.ondragstart = (e) => window.drag(e, client.id);
-                card.onclick = () => openModal(client.id);
-
-                card.innerHTML = `
-                    <div class="flex justify-between items-start mb-1">
-                        <p class="font-semibold text-sm text-gray-800 dark:text-gray-200 pr-2">${client.name}</p>
-                        <button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-400 hover:text-accentRed lg:opacity-0 lg:group-hover:opacity-100 transition-opacity p-1">
-                            <i class="ph ph-pencil-simple text-sm"></i>
-                        </button>
-                    </div>
-                    <p class="text-xs text-gray-500 mb-3 truncate">${client.business || 'N/A'}</p>
-                    <div class="flex items-center justify-between">
-                        <span class="text-xs font-bold text-accentRed">₹${(client.price || 0).toLocaleString('en-IN')}</span>
-                        <div class="w-6 h-6 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-[10px] font-bold text-gray-500">
-                            ${client.name.charAt(0).toUpperCase()}
-                        </div>
-                    </div>
-                    ${deadlineHtml}
-                `;
-                col.appendChild(card);
-            });
-
-            // Update counts in column headers
-            Object.keys(counts).forEach(status => {
-                const countEl = document.getElementById(`count-${status.toLowerCase()}`);
-                if(countEl) countEl.innerText = counts[status];
-            });
         }
 
         // --- Chart Generation Logic ---
