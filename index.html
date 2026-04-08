@@ -1183,7 +1183,7 @@
                 const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
                 let financeHtml = `<div>
                     <p class="font-medium text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
-                    ${balance > 0 ? `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>` : `<p class="text-[10px] md:text-xs text-green-500 font-medium">Fully Paid</p>`}
+                    ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
                 </div>`;
 
                 tr.innerHTML = `
@@ -1530,7 +1530,7 @@
                     const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
                     let financeHtml = `<div>
                         <p class="font-medium text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
-                        ${balance > 0 ? `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>` : `<p class="text-[10px] md:text-xs text-green-500 font-medium">Fully Paid</p>`}
+                        ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
                     </div>`;
 
                     const d = new Date(client.deadline);
@@ -1613,10 +1613,21 @@
             }
 
             // Financials and Deadlines in Modal
+            const isCompleted = client.status === 'Completed';
+            const displayAdvance = isCompleted ? (client.price || 0) : (client.advance || 0);
+            const balance = Math.max(0, (Number(client.price) || 0) - Number(displayAdvance));
+
             document.getElementById('modal-price').innerText = `₹${(client.price || 0).toLocaleString('en-IN')}`;
-            document.getElementById('modal-advance').innerText = `₹${(client.advance || 0).toLocaleString('en-IN')}`;
-            const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
-            document.getElementById('modal-balance').innerText = `₹${balance.toLocaleString('en-IN')}`;
+            document.getElementById('modal-advance').innerText = `₹${displayAdvance.toLocaleString('en-IN')}`;
+            
+            const balanceEl = document.getElementById('modal-balance');
+            if (isCompleted || balance <= 0) {
+                balanceEl.innerText = 'Fully Paid';
+                balanceEl.className = 'font-bold text-xl text-green-500 dark:text-green-400';
+            } else {
+                balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
+                balanceEl.className = 'font-bold text-xl text-accentRed';
+            }
             
             document.getElementById('modal-deadline').innerHTML = client.deadline 
                 ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` 
