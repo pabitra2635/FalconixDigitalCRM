@@ -363,9 +363,14 @@
                                 <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Client Database</h2>
                                 <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">Manage and track your agency's clients.</p>
                             </div>
-                            <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
-                                <i class="ph ph-plus text-lg"></i> New Client
-                            </button>
+                            <div class="flex flex-wrap items-center gap-3 shrink-0">
+                                <button onclick="exportToCSV()" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 shadow-sm shrink-0">
+                                    <i class="ph ph-download-simple text-lg"></i> Export CSV
+                                </button>
+                                <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
+                                    <i class="ph ph-plus text-lg"></i> New Client
+                                </button>
+                            </div>
                         </div>
 
                         <!-- Filters -->
@@ -410,8 +415,15 @@
                                     <i class="ph ph-users-slash text-2xl md:text-3xl text-gray-500 dark:text-gray-400"></i>
                                 </div>
                                 <h3 class="text-lg md:text-xl font-medium mb-2 text-gray-900 dark:text-white">No clients found</h3>
-                                <p class="text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-sm mx-auto">Add your first client to start managing your projects, or adjust your search filters.</p>
+                                <p class="text-sm md:text-base text-gray-600 dark:text-gray-400 max-w-sm mx-auto">Add your first client or adjust your search filters.</p>
                             </div>
+                        </div>
+
+                        <!-- Load More Container -->
+                        <div id="load-more-container" class="hidden flex justify-center mt-6">
+                            <button onclick="loadMoreClients()" class="bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
+                                <i class="ph ph-arrow-down text-lg"></i> Load More Clients
+                            </button>
                         </div>
                     </section>
 
@@ -648,15 +660,14 @@
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // IMPORTANT: The specific allowed emails per your request
-        const ALLOWED_EMAILS = [
+        // Fallback Super Admins if the Firestore collection is empty
+        const SUPER_ADMINS = [
             'pabitramondal2635@gmail.com',
             'sujata232005@gmail.com'
         ];
 
-        // Map emails to display names for greeting
         const ADMIN_NAMES = {
             'pabitramondal2635@gmail.com': 'Pabitra',
             'sujata232005@gmail.com': 'Sujata'
@@ -682,6 +693,10 @@
         let currentUser = null;
         let clientsList = [];
         let unsubscribeClients = null;
+
+        // Pagination State
+        let currentPage = 1;
+        const ITEMS_PER_PAGE = 15;
         
         // Chart Instances
         let revenueChartInstance = null;
@@ -698,6 +713,32 @@
         // Store default button HTML to restore it after loading state
         const defaultBtnHtml = googleLoginBtn.innerHTML;
 
+        // --- DYNAMIC USER MANAGEMENT (FEATURE 3) ---
+        async function checkIfAdmin(email) {
+            const lowerEmail = email.toLowerCase();
+            
+            // 1. Check Super Admins Fallback
+            if (SUPER_ADMINS.includes(lowerEmail)) return true;
+            
+            // 2. Query Firestore `admins` collection dynamically
+            try {
+                const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
+                const snapshot = await getDocs(adminsRef);
+                
+                let foundAdmin = false;
+                snapshot.forEach(doc => {
+                    const data = doc.data();
+                    if (data.email && data.email.toLowerCase() === lowerEmail) {
+                        foundAdmin = true;
+                    }
+                });
+                return foundAdmin;
+            } catch (error) {
+                console.error("Error verifying admin dynamically in Firestore:", error);
+                return false; 
+            }
+        }
+
         // --- AUTHENTICATION LOGIC ---
 
         googleLoginBtn.addEventListener('click', async () => {
@@ -708,19 +749,18 @@
                 const result = await signInWithPopup(auth, googleProvider);
                 const user = result.user;
 
-                // 1st Security Layer: Check immediately after popup returns
-                if (!ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+                // Verify immediately to prevent UI flicker
+                const isAdmin = await checkIfAdmin(user.email);
+                if (!isAdmin) {
                     await signOut(auth);
-                    loginError.innerText = "Access Denied: Email not authorized.";
+                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
                     loginError.classList.remove('hidden');
                 }
-                // (The onAuthStateChanged listener handles the successful transition)
             } catch (error) {
                 console.error("Login failed:", error);
                 loginError.innerText = "Login process was cancelled or failed.";
                 loginError.classList.remove('hidden');
             } finally {
-                // Restore button appearance if login failed/was rejected
                 if (!currentUser) {
                     googleLoginBtn.innerHTML = defaultBtnHtml;
                 }
@@ -783,7 +823,6 @@
             let charIndex = 0;
             let isDeleting = false;
 
-            // Define multiple beautiful gradient colors for variety
             const gradients = [
                 "from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400",
                 "from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400",
@@ -792,7 +831,6 @@
                 "from-cyan-600 via-blue-600 to-indigo-600 dark:from-cyan-400 dark:via-blue-400 dark:to-indigo-400"
             ];
 
-            // Initialize first color
             el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text " + gradients[0];
 
             function type() {
@@ -802,33 +840,31 @@
                 if (isDeleting) {
                     el.innerText = fullText.substring(0, charIndex - 1);
                     charIndex--;
-                    emojiEl.innerText = ''; // Hide emoji when deleting
+                    emojiEl.innerText = ''; 
                 } else {
                     el.innerText = fullText.substring(0, charIndex + 1);
                     charIndex++;
                     if (charIndex === fullText.length) {
-                        emojiEl.innerText = '\u00A0' + currentPhrase.emoji; // Show emoji at the end with a space
+                        emojiEl.innerText = '\u00A0' + currentPhrase.emoji;
                     }
                 }
 
-                let typingSpeed = isDeleting ? 30 : 70; // typing and deleting speeds
+                let typingSpeed = isDeleting ? 30 : 70;
 
                 if (!isDeleting && charIndex === fullText.length) {
-                    typingSpeed = 2500; // Pause at the end of a phrase before erasing
+                    typingSpeed = 2500;
                     isDeleting = true;
                 } else if (isDeleting && charIndex === 0) {
                     isDeleting = false;
                     phraseIndex = (phraseIndex + 1) % phrases.length;
-                    typingSpeed = 500; // Pause before typing the next phrase
+                    typingSpeed = 500; 
                     
-                    // Switch to a new gradient color for the next greeting
                     el.className = "font-bold bg-gradient-to-r text-transparent bg-clip-text " + gradients[phraseIndex % gradients.length];
                 }
 
                 typewriterTimeout = setTimeout(type, typingSpeed);
             }
 
-            // Reset and start typing
             clearTimeout(typewriterTimeout);
             el.innerText = '';
             if (emojiEl) emojiEl.innerText = '';
@@ -837,27 +873,29 @@
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // 2nd Security Layer: Double-check post-login
-                if (ALLOWED_EMAILS.includes(user.email.toLowerCase())) {
+                // Secondary Security Layer via Database Query
+                const isAdmin = await checkIfAdmin(user.email);
+                
+                if (isAdmin) {
                     currentUser = user;
                     loggedInEmailText.innerText = user.email;
                     
-                    // Show App UI, Hide Login
+                    // Show App UI
                     loginWrapper.classList.add('opacity-0', 'pointer-events-none');
                     setTimeout(() => {
                         loginWrapper.classList.add('hidden');
                         appWrapper.classList.remove('hidden');
                         appWrapper.classList.add('flex');
                         
-                        // Trigger Continuous Typewriter Greeting
-                        const adminName = ADMIN_NAMES[user.email.toLowerCase()] || 'Admin';
+                        // Use split email prefix if no hardcoded name found
+                        const defaultName = user.email.split('@')[0];
+                        const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
                         startContinuousTypewriter(adminName);
                         
                     }, 500);
 
                     setupDatabaseListener();
                 } else {
-                    // Kick out if somehow logged in with wrong email
                     await signOut(auth);
                     loginError.innerText = "Unauthorized email detected. Session terminated.";
                     loginError.classList.remove('hidden');
@@ -867,7 +905,6 @@
                 currentUser = null;
                 if(unsubscribeClients) unsubscribeClients();
                 
-                // Show Login UI, Hide App
                 appWrapper.classList.add('hidden');
                 appWrapper.classList.remove('flex');
                 loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -888,12 +925,11 @@
                     clientsList.push({ id: doc.id, ...doc.data() });
                 });
                 
-                // Sort by creation date descending
                 clientsList.sort((a, b) => b.createdAt - a.createdAt);
                 
                 updateDashboardStats();
                 updateCharts();
-                renderClientTable();
+                renderClientTable(true); // reset page to 1 on fresh sync
                 
                 globalLoader.classList.add('hidden');
             }, (error) => {
@@ -909,12 +945,10 @@
             if (!currentUser) return;
 
             const submitBtn = document.getElementById('form-submit-btn');
-            const originalBtnHtml = submitBtn.innerHTML;
             const idField = document.getElementById('client-id').value;
             const isEditing = !!idField;
             const clientId = isEditing ? idField : crypto.randomUUID();
 
-            // Show Saving Animation
             submitBtn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> <span>${isEditing ? 'Updating...' : 'Saving...'}</span>`;
             submitBtn.disabled = true;
             submitBtn.classList.add('opacity-70', 'cursor-not-allowed');
@@ -937,13 +971,11 @@
             };
 
             try {
-                // Save to shared path
                 const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
                 await setDoc(docRef, clientData);
                 
                 showToast(isEditing ? "Client updated successfully!" : "New client added successfully!", "success");
                 
-                // Clear the form back to initial state immediately
                 document.getElementById('client-form').reset();
                 document.getElementById('client-id').value = "";
                 document.getElementById('form-title').innerText = "Add New Client";
@@ -952,15 +984,61 @@
                 console.error("Save Error:", error);
                 showToast("Failed to save client.", "error");
             } finally {
-                // Restore Button State but strictly as "Save Client" so the edit state is lost
                 submitBtn.innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>';
                 submitBtn.disabled = false;
                 submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
             }
         });
 
+        // --- FEATURE 4: CSV EXPORT LOGIC ---
+        window.exportToCSV = function() {
+            if (clientsList.length === 0) {
+                showToast("No clients available to export.", "error");
+                return;
+            }
 
-        // --- UI Logic (Navigation, Theme, Rendering) remains the same ---
+            const headers = ["Name", "Phone", "Email", "Business Type", "Status", "Total Price", "Advance Paid", "Balance Due", "Deadline", "Source", "Website Category", "Website URL", "Notes"];
+            
+            // Helper to escape commas inside values securely
+            const escapeCSV = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
+
+            let csvContent = headers.join(",") + "\n";
+            
+            clientsList.forEach(c => {
+                const balance = Math.max(0, (Number(c.price) || 0) - (Number(c.advance) || 0));
+                
+                const row = [
+                    escapeCSV(c.name),
+                    escapeCSV(c.phone),
+                    escapeCSV(c.email),
+                    escapeCSV(c.business),
+                    escapeCSV(c.status),
+                    c.price || 0,
+                    c.advance || 0,
+                    balance,
+                    escapeCSV(c.deadline),
+                    escapeCSV(c.source),
+                    escapeCSV(c.website),
+                    escapeCSV(c.websiteUrl),
+                    escapeCSV(c.notes)
+                ];
+                csvContent += row.join(",") + "\n";
+            });
+
+            // Creates an invisible downloadable Blob linking exactly to the CSV
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement("a");
+            link.setAttribute("href", url);
+            link.setAttribute("download", `falconix_clients_${new Date().toISOString().split('T')[0]}.csv`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast("CSV Exported successfully!", "success");
+        };
+
+        // --- UI Logic (Navigation, Theme, Rendering) ---
         window.toggleMobileMenu = function() {
             const sidebar = document.getElementById('sidebar');
             const overlay = document.getElementById('mobile-overlay');
@@ -992,7 +1070,6 @@
                 document.getElementById('mobile-overlay').classList.add('hidden');
             }
 
-            // Only perfectly wipe the form if it's accessed via the normal navigation flow, not from the "Edit" button
             if(viewId === 'add-client' && !isEdit) {
                 document.getElementById('form-title').innerText = "Add New Client";
                 document.getElementById('form-submit-btn').innerHTML = '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>';
@@ -1001,7 +1078,7 @@
             }
 
             if(viewId === 'client-list' || viewId === 'dashboard') {
-                renderClientTable();
+                renderClientTable(true); // reset to page 1
             }
         };
 
@@ -1021,7 +1098,6 @@
                 themeIcon.classList.replace('ph-moon', 'ph-sun');
             }
 
-            // Redraw charts with correct theme colors
             setTimeout(() => {
                 if(clientsList.length > 0) updateCharts();
             }, 50);
@@ -1041,7 +1117,6 @@
             if(!client) return;
             
             closeModal();
-            // Important: Send 'true' to let the navigation logic know we are editing, so it shouldn't wipe the form empty
             navigate('add-client', true);
             
             document.getElementById('client-id').value = client.id;
@@ -1096,7 +1171,6 @@
             pendingEl.innerText = formattedPending;
             pendingEl.title = formattedPending;
 
-            // Render Recent Clients
             const recentBody = document.getElementById('recent-clients-tbody');
             recentBody.innerHTML = '';
             clientsList.slice(0, 5).forEach(client => {
@@ -1129,7 +1203,6 @@
                 recentBody.appendChild(tr);
             });
 
-            // Render Upcoming Deadlines widget
             const deadlinesContainer = document.getElementById('upcoming-deadlines-list');
             deadlinesContainer.innerHTML = '';
             const nowTime = new Date().setHours(0,0,0,0);
@@ -1176,12 +1249,10 @@
         function updateCharts() {
             if (!document.getElementById('revenueChart')) return;
             
-            // Theme Colors
             const isDark = document.documentElement.classList.contains('dark');
             const textColor = isDark ? '#9ca3af' : '#4b5563';
             const gridColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.1)';
 
-            // 1. Prepare Monthly Revenue Data (Last 6 Months)
             const last6Months = [];
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
             const now = new Date();
@@ -1198,13 +1269,10 @@
 
             const sourcesMap = {};
 
-            // Aggregate Data
             clientsList.forEach(client => {
-                // Aggregate Sources
                 const src = client.source || 'Referral';
                 sourcesMap[src] = (sourcesMap[src] || 0) + 1;
 
-                // Aggregate Revenue
                 if (client.status === 'Completed' && client.createdAt) {
                     const d = new Date(client.createdAt);
                     const m = d.getMonth();
@@ -1217,7 +1285,6 @@
                 }
             });
 
-            // 2. Render Revenue Bar Chart
             const ctxRev = document.getElementById('revenueChart').getContext('2d');
             if (revenueChartInstance) revenueChartInstance.destroy();
             
@@ -1265,7 +1332,6 @@
                 }
             });
 
-            // 3. Render Source Doughnut Chart
             const ctxSrc = document.getElementById('sourceChart').getContext('2d');
             if (sourceChartInstance) sourceChartInstance.destroy();
 
@@ -1306,20 +1372,33 @@
             });
         }
 
-        function renderClientTable() {
+        // --- FEATURE 5: CLIENT-SIDE PAGINATION RENDERING ---
+        window.loadMoreClients = function() {
+            currentPage++;
+            renderClientTable(false); // Render without resetting page
+        };
+
+        function renderClientTable(resetPage = false) {
+            if (resetPage) currentPage = 1;
+
             const tbody = document.getElementById('clients-tbody');
             const emptyState = document.getElementById('empty-state');
+            const loadMoreBtnContainer = document.getElementById('load-more-container');
             const searchQ = document.getElementById('search-input').value.toLowerCase();
             const statusQ = document.getElementById('filter-status').value;
 
+            // 1. Filter clients
             const filtered = clientsList.filter(client => {
                 const matchSearch = client.name.toLowerCase().includes(searchQ) || client.phone.includes(searchQ);
                 const matchStatus = statusQ === 'All' || client.status === statusQ;
                 return matchSearch && matchStatus;
             });
 
+            // 2. Paginate clients
+            const paginated = filtered.slice(0, currentPage * ITEMS_PER_PAGE);
+
             tbody.innerHTML = '';
-            if (filtered.length === 0) {
+            if (paginated.length === 0) {
                 tbody.parentElement.classList.add('hidden');
                 emptyState.classList.remove('hidden');
                 emptyState.classList.add('flex');
@@ -1328,7 +1407,7 @@
                 emptyState.classList.add('hidden');
                 emptyState.classList.remove('flex');
 
-                filtered.forEach(client => {
+                paginated.forEach(client => {
                     const tr = document.createElement('tr');
                     tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
                     
@@ -1387,10 +1466,17 @@
                     tbody.appendChild(tr);
                 });
             }
+
+            // Show or Hide "Load More" Button
+            if (filtered.length > currentPage * ITEMS_PER_PAGE) {
+                loadMoreBtnContainer.classList.remove('hidden');
+            } else {
+                loadMoreBtnContainer.classList.add('hidden');
+            }
         }
 
-        document.getElementById('search-input').addEventListener('input', renderClientTable);
-        document.getElementById('filter-status').addEventListener('change', renderClientTable);
+        document.getElementById('search-input').addEventListener('input', () => renderClientTable(true));
+        document.getElementById('filter-status').addEventListener('change', () => renderClientTable(true));
 
         const modal = document.getElementById('client-modal');
         window.openModal = function(id) {
@@ -1417,7 +1503,6 @@
                 urlEl.classList.add('text-gray-900', 'dark:text-gray-200');
             }
 
-            // Financials and Deadlines in Modal
             const isCompleted = client.status === 'Completed';
             const displayAdvance = isCompleted ? (client.price || 0) : (client.advance || 0);
             const balance = Math.max(0, (Number(client.price) || 0) - Number(displayAdvance));
