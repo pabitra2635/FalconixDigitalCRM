@@ -501,7 +501,10 @@ function updateDashboardStats() {
             <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
             ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
         </div>`;
-        let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentRed dark:hover:text-accentRed transition-colors p-1 md:p-2"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
+        
+        let viewBtnHtml = `<button onclick="event.stopPropagation(); openModal('${client.id}')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 transition-colors p-1 md:p-2" title="View Details"><i class="ph ph-eye text-base md:text-lg"></i></button>`;
+        let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentRed dark:hover:text-accentRed transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
+        
         tr.innerHTML = `
             <td class="p-3 md:p-4">
                 <p class="font-medium text-gray-900 dark:text-gray-200">${client.name}</p>
@@ -513,7 +516,10 @@ function updateDashboardStats() {
                 <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
             </td>
             <td class="p-3 md:p-4 text-right">
-                ${editBtnHtml}
+                <div class="flex items-center justify-end gap-1">
+                    ${viewBtnHtml}
+                    ${editBtnHtml}
+                </div>
             </td>
         `;
         recentBody.appendChild(tr);
@@ -797,16 +803,21 @@ function renderClientTable(resetPage = false) {
                 }
                 deadlineHtml = `<p class="text-xs md:text-sm ${colorClass}"><i class="ph ph-clock"></i> ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>`;
             }
+            
             let actionsHtml = `
                 <div class="flex items-center justify-end gap-2">
-                    <a href="https://wa.me/${client.phone.replace(/[^0-9]/g, '')}" target="_blank" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
+                    <button onclick="event.stopPropagation(); openModal('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
+                        <i class="ph ph-eye text-base md:text-lg"></i>
+                    </button>
+                    <a href="https://wa.me/${client.phone.replace(/[^0-9]/g, '')}" target="_blank" onclick="event.stopPropagation();" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-green-100 text-green-600 flex items-center justify-center hover:bg-green-200 transition-colors" title="WhatsApp">
                         <i class="ph ph-whatsapp-logo text-base md:text-lg"></i>
                     </a>
-                    ${canEdit ? `<button onclick="editClient('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Edit">
+                    ${canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-400 flex items-center justify-center hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors" title="Edit">
                         <i class="ph ph-pencil-simple text-base md:text-lg"></i>
                     </button>` : ''}
                 </div>
             `;
+            
             tr.innerHTML = `
                 <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
                     <div class="flex items-center gap-2 md:gap-3">
@@ -1038,7 +1049,7 @@ function renderRequestsTable() {
             <th class="p-3 md:p-4 font-medium">Date</th>
             <th class="p-3 md:p-4 font-medium">Type</th>
             <th class="p-3 md:p-4 font-medium">Client Name</th>
-            <th class="p-3 md:p-4 font-medium text-right">Status</th>
+            <th class="p-3 md:p-4 font-medium text-right">Status / View</th>
         `;
     }
 
@@ -1073,9 +1084,9 @@ function renderRequestsTable() {
                 `;
                 col4Html = `
                     <div class="flex items-center justify-end gap-2">
-                        <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors">View</button>
-                        <button onclick="approveReq('${req.id}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-600 transition-colors">Approve</button>
-                        <button onclick="rejectReq('${req.id}')" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-red-600 transition-colors">Reject</button>
+                        <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors shadow-sm">View</button>
+                        <button onclick="approveReq('${req.id}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-600 transition-colors shadow-sm">Approve</button>
+                        <button onclick="rejectReq('${req.id}')" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-red-600 transition-colors shadow-sm">Reject</button>
                     </div>
                 `;
             } else {
@@ -1091,8 +1102,10 @@ function renderRequestsTable() {
                 
                 col4Html = `
                     <div class="flex items-center justify-end gap-2">
-                        <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors">View</button>
                         <span class="px-3 py-1 rounded-full text-[10px] md:text-xs font-medium ${statusColor}">${req.status}</span>
+                        <button onclick="viewRequestDetails('${req.id}')" class="w-8 h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
+                            <i class="ph ph-eye text-base md:text-lg"></i>
+                        </button>
                     </div>
                 `;
             }
@@ -1160,8 +1173,12 @@ window.viewRequestDetails = function(reqId) {
     statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
     
     const addedByEl = document.getElementById('modal-added-by');
-    addedByEl.innerText = `Requested by: ${req.requestedByName} (${req.requestedByEmail})`;
-    addedByEl.classList.remove('hidden');
+    if (req.requestedByName) {
+        addedByEl.innerText = `Requested by: ${req.requestedByName} (${req.requestedByEmail})`;
+        addedByEl.classList.remove('hidden');
+    } else {
+        addedByEl.classList.add('hidden');
+    }
     
     const cleanPhone = client.phone.replace(/[^0-9]/g, '');
     document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
