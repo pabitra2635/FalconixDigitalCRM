@@ -1091,6 +1091,7 @@ function renderRequestsTable() {
                 
                 col4Html = `
                     <div class="flex items-center justify-end gap-2">
+                        <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors">View</button>
                         <span class="px-3 py-1 rounded-full text-[10px] md:text-xs font-medium ${statusColor}">${req.status}</span>
                     </div>
                 `;
