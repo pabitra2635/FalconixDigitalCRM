@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const SUPER_ADMIN_EMAIL = 'pabitramondal2635@gmail.com';
 
@@ -39,11 +39,13 @@ let currentUser = null;
 let isSuperAdminUser = false;
 let clientsList = [];
 let requestsList = [];
+let notificationsList = [];
 let unsubscribeClients = null;
 let unsubscribeRequests = null;
+let unsubscribeNotifications = null;
 
 let currentPage = 1;
-const ITEMS_PER_PAGE = 15;
+const ITEMS_PER_PAGE = 10;
 
 let revenueChartInstance = null;
 let sourceChartInstance = null;
@@ -227,6 +229,7 @@ onAuthStateChanged(auth, async (user) => {
         isSuperAdminUser = false;
         if(unsubscribeClients) unsubscribeClients();
         if(unsubscribeRequests) unsubscribeRequests();
+        if(unsubscribeNotifications) unsubscribeNotifications();
         appWrapper.classList.add('hidden');
         appWrapper.classList.remove('flex');
         loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -237,6 +240,7 @@ onAuthStateChanged(auth, async (user) => {
 function setupDatabaseListener() {
     if (!currentUser) return;
     globalLoader.classList.remove('hidden');
+    
     const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
     unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
         clientsList = [];
@@ -246,11 +250,21 @@ function setupDatabaseListener() {
         clientsList.sort((a, b) => b.createdAt - a.createdAt);
         updateDashboardStats();
         updateCharts();
+        renderLeaderboard();
         renderClientTable(true);
         globalLoader.classList.add('hidden');
     }, (error) => {
         showToast("Database sync error.", "error");
         globalLoader.classList.add('hidden');
+    });
+
+    const notifRef = collection(db, 'artifacts', appId, 'public', 'data', 'notifications');
+    unsubscribeNotifications = onSnapshot(notifRef, (snapshot) => {
+        notificationsList = [];
+        snapshot.forEach(doc => {
+            notificationsList.push({ id: doc.id, ...doc.data() });
+        });
+        renderNotifications();
     });
 
     if (isSuperAdminUser) {
@@ -282,6 +296,28 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     const addedEmail = isEditing ? (existingClient?.addedByEmail || currentUser.email) : currentUser.email;
     const addedName = isEditing ? (existingClient?.addedByName || ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]) : (ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]);
 
+    // Activity Log generation
+    let logAction = "Client details updated";
+    const statusField = document.getElementById('form-status').value;
+    if (isEditing && existingClient && existingClient.status !== statusField) {
+        logAction = `Status changed to ${statusField}`;
+    } else if (!isEditing) {
+        logAction = "Added new client";
+    }
+
+    if (!isSuperAdminUser) {
+        logAction = isEditing ? "Requested client update" : "Requested client creation";
+    }
+
+    const newLogEntry = {
+        action: logAction,
+        performedBy: addedName,
+        timestamp: Date.now()
+    };
+
+    const activityLog = isEditing && existingClient?.activityLog ? [...existingClient.activityLog] : [];
+    activityLog.push(newLogEntry);
+
     const clientData = {
         name: document.getElementById('form-name').value.trim(),
         business: document.getElementById('form-business').value.trim(),
@@ -293,12 +329,13 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         price: parseFloat(document.getElementById('form-price').value) || 0,
         advance: parseFloat(document.getElementById('form-advance').value) || 0,
         deadline: document.getElementById('form-deadline').value || null,
-        status: document.getElementById('form-status').value,
+        status: statusField,
         notes: document.getElementById('form-notes').value.trim(),
         createdAt: isEditing ? (existingClient?.createdAt || Date.now()) : Date.now(),
         updatedAt: Date.now(),
         addedByEmail: addedEmail,
-        addedByName: addedName
+        addedByName: addedName,
+        activityLog: activityLog
     };
 
     try {
@@ -334,45 +371,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         submitBtn.classList.remove('opacity-70', 'cursor-not-allowed');
     }
 });
-
-window.exportToCSV = function() {
-    if (clientsList.length === 0) {
-        showToast("No clients available to export.", "error");
-        return;
-    }
-    const headers = ["Name", "Phone", "Email", "Business Type", "Status", "Total Price", "Advance Paid", "Balance Due", "Deadline", "Source", "Website Category", "Website URL", "Notes", "Added By"];
-    const escapeCSV = (val) => `"${(val || '').toString().replace(/"/g, '""')}"`;
-    let csvContent = headers.join(",") + "\n";
-    clientsList.forEach(c => {
-        const balance = Math.max(0, (Number(c.price) || 0) - (Number(c.advance) || 0));
-        const row = [
-            escapeCSV(c.name),
-            escapeCSV(c.phone),
-            escapeCSV(c.email),
-            escapeCSV(c.business),
-            escapeCSV(c.status),
-            c.price || 0,
-            c.advance || 0,
-            balance,
-            escapeCSV(c.deadline),
-            escapeCSV(c.source),
-            escapeCSV(c.website),
-            escapeCSV(c.websiteUrl),
-            escapeCSV(c.notes),
-            escapeCSV(c.addedByName || c.addedByEmail)
-        ];
-        csvContent += row.join(",") + "\n";
-    });
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.setAttribute("href", url);
-    link.setAttribute("download", `falconix_clients_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    showToast("CSV Exported successfully!", "success");
-};
 
 window.toggleMobileMenu = function() {
     const sidebar = document.getElementById('sidebar');
@@ -415,6 +413,9 @@ window.navigate = function(viewId, isEdit = false) {
     }
     if(viewId === 'requests') {
         renderRequestsTable();
+    }
+    if(viewId === 'notifications') {
+        renderNotifications();
     }
 };
 
@@ -665,6 +666,91 @@ function updateCharts() {
     });
 }
 
+function renderLeaderboard() {
+    const filter = document.getElementById('leaderboard-filter').value;
+    const tbody = document.getElementById('leaderboard-tbody');
+    const emptyState = document.getElementById('leaderboard-empty');
+    const tableContainer = document.getElementById('leaderboard-table-container');
+
+    const now = new Date();
+    let startDate = new Date(0);
+    let endDate = new Date('9999-12-31');
+
+    if (filter === 'this_month') {
+        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (filter === 'last_month') {
+        startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+        endDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    } else if (filter === 'this_year') {
+        startDate = new Date(now.getFullYear(), 0, 1);
+    }
+
+    const statsMap = {};
+
+    clientsList.forEach(client => {
+        const createdAt = new Date(client.createdAt);
+        if (createdAt >= startDate && createdAt < endDate) {
+            const email = client.addedByEmail || 'unknown@domain.com';
+            const name = client.addedByName || email.split('@')[0];
+
+            if (!statsMap[email]) {
+                statsMap[email] = { name: name, clientsCount: 0, revenue: 0, email: email };
+            }
+
+            statsMap[email].clientsCount++;
+            if (client.status === 'Completed') {
+                statsMap[email].revenue += (Number(client.price) || 0);
+            }
+        }
+    });
+
+    const statsArray = Object.values(statsMap);
+    
+    // Sort primarily by revenue (highest first), then by total clients added
+    statsArray.sort((a, b) => b.revenue - a.revenue || b.clientsCount - a.clientsCount);
+
+    tbody.innerHTML = '';
+    if (statsArray.length === 0) {
+        tableContainer.classList.add('hidden');
+        emptyState.classList.remove('hidden');
+        emptyState.classList.add('flex');
+    } else {
+        tableContainer.classList.remove('hidden');
+        emptyState.classList.add('hidden');
+        emptyState.classList.remove('flex');
+
+        statsArray.forEach((stat, index) => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+
+            let rankHtml = `<span class="font-bold text-gray-500 dark:text-gray-400">#${index + 1}</span>`;
+            if (index === 0) rankHtml = `<span class="text-xl">🥇</span>`;
+            else if (index === 1) rankHtml = `<span class="text-xl">🥈</span>`;
+            else if (index === 2) rankHtml = `<span class="text-xl">🥉</span>`;
+
+            tr.innerHTML = `
+                <td class="p-3 md:p-4 text-center">${rankHtml}</td>
+                <td class="p-3 md:p-4">
+                    <div class="flex items-center gap-2 md:gap-3">
+                        <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm shrink-0 border border-gray-300 dark:border-transparent">
+                            ${stat.name.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                            <p class="font-medium text-gray-900 dark:text-gray-200 text-sm">${stat.name}</p>
+                            <p class="text-[10px] text-gray-500">${stat.email}</p>
+                        </div>
+                    </div>
+                </td>
+                <td class="p-3 md:p-4 text-center font-medium text-gray-900 dark:text-gray-200">${stat.clientsCount}</td>
+                <td class="p-3 md:p-4 text-right font-bold text-green-600 dark:text-green-500">₹${stat.revenue.toLocaleString('en-IN')}</td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+document.getElementById('leaderboard-filter').addEventListener('change', renderLeaderboard);
+
 window.loadMoreClients = function() {
     currentPage++;
     renderClientTable(false); 
@@ -677,11 +763,16 @@ function renderClientTable(resetPage = false) {
     const loadMoreBtnContainer = document.getElementById('load-more-container');
     const searchQ = document.getElementById('search-input').value.toLowerCase();
     const statusQ = document.getElementById('filter-status').value;
+    const ownerQ = document.getElementById('filter-owner').value;
+
     const filtered = clientsList.filter(client => {
         const matchSearch = client.name.toLowerCase().includes(searchQ) || client.phone.includes(searchQ);
         const matchStatus = statusQ === 'All' || client.status === statusQ;
-        return matchSearch && matchStatus;
+        const matchOwner = ownerQ === 'All' || (ownerQ === 'Mine' && client.addedByEmail === currentUser.email);
+        
+        return matchSearch && matchStatus && matchOwner;
     });
+
     const paginated = filtered.slice(0, currentPage * ITEMS_PER_PAGE);
     tbody.innerHTML = '';
     if (paginated.length === 0) {
@@ -761,6 +852,25 @@ function renderClientTable(resetPage = false) {
 
 document.getElementById('search-input').addEventListener('input', () => renderClientTable(true));
 document.getElementById('filter-status').addEventListener('change', () => renderClientTable(true));
+document.getElementById('filter-owner').addEventListener('change', () => renderClientTable(true));
+
+function renderActivityLog(client) {
+    const logContainer = document.getElementById('modal-activity-log');
+    const logArray = client.activityLog || [];
+    
+    if (logArray.length === 0) {
+        logContainer.innerHTML = '<p class="text-xs text-gray-500 px-2 py-1">No past activity recorded for this client.</p>';
+    } else {
+        const sortedLog = logArray.sort((a,b) => b.timestamp - a.timestamp);
+        logContainer.innerHTML = sortedLog.map(log => `
+            <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-1.5 pl-4 pb-4 last:pb-0 relative">
+                <div class="absolute w-2.5 h-2.5 rounded-full bg-accentRed -left-[5.5px] top-1"></div>
+                <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold text-gray-900 dark:text-white">${log.performedBy}</span> ${log.action.toLowerCase()}</p>
+                <p class="text-[10px] text-gray-500 mt-0.5">${new Date(log.timestamp).toLocaleString('en-IN')}</p>
+            </div>
+        `).join('');
+    }
+}
 
 const modal = document.getElementById('client-modal');
 window.openModal = function(id) {
@@ -811,6 +921,7 @@ window.openModal = function(id) {
     }
     const cleanPhone = client.phone.replace(/[^0-9]/g, '');
     document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
+    
     const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
     const editBtn = document.getElementById('modal-edit-btn');
     if (canEdit) {
@@ -819,6 +930,16 @@ window.openModal = function(id) {
     } else {
         editBtn.classList.add('hidden');
     }
+    
+    const deleteBtn = document.getElementById('modal-delete-btn');
+    if (isSuperAdminUser) {
+        deleteBtn.classList.remove('hidden');
+        deleteBtn.onclick = () => showDeleteModal(id);
+    } else {
+        deleteBtn.classList.add('hidden');
+    }
+    
+    renderActivityLog(client);
     modal.classList.remove('hidden');
 };
 
@@ -833,6 +954,40 @@ modal.addEventListener('click', (e) => {
 const logoutModal = document.getElementById('logout-modal');
 logoutModal.addEventListener('click', (e) => {
     if (e.target === logoutModal) hideLogoutModal();
+});
+
+let clientToDelete = null;
+
+window.showDeleteModal = function(id) {
+    clientToDelete = id;
+    document.getElementById('delete-confirm-modal').classList.remove('hidden');
+};
+
+window.hideDeleteModal = function() {
+    clientToDelete = null;
+    document.getElementById('delete-confirm-modal').classList.add('hidden');
+};
+
+document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
+    if (!clientToDelete || !isSuperAdminUser) return;
+    
+    const btn = document.getElementById('confirm-delete-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
+    btn.disabled = true;
+    
+    try {
+        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToDelete);
+        await deleteDoc(docRef);
+        showToast("Client deleted successfully.", "success");
+        hideDeleteModal();
+        closeModal();
+    } catch (error) {
+        showToast("Failed to delete client.", "error");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
 });
 
 function showToast(message, type = 'info') {
@@ -885,6 +1040,7 @@ function renderRequestsTable() {
                 <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${req.clientData.name}</td>
                 <td class="p-3 md:p-4 text-right">
                     <div class="flex items-center justify-end gap-2">
+                        <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors">View</button>
                         <button onclick="approveReq('${req.id}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-600 transition-colors">Approve</button>
                         <button onclick="rejectReq('${req.id}')" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-red-600 transition-colors">Reject</button>
                     </div>
@@ -895,14 +1051,98 @@ function renderRequestsTable() {
     }
 }
 
+window.viewRequestDetails = function(reqId) {
+    const req = requestsList.find(r => r.id === reqId);
+    if(!req) return;
+    
+    const client = req.clientData;
+    
+    document.getElementById('modal-name').innerText = client.name + ` (${req.type} Request)`;
+    document.getElementById('modal-business').innerText = client.business || 'N/A';
+    document.getElementById('modal-phone').innerText = client.phone;
+    document.getElementById('modal-email').innerText = client.email || 'N/A';
+    document.getElementById('modal-website').innerText = client.website;
+    document.getElementById('modal-source').innerText = client.source || 'N/A';
+    
+    const urlEl = document.getElementById('modal-website-url');
+    if (client.websiteUrl) {
+        urlEl.innerText = client.websiteUrl;
+        urlEl.href = client.websiteUrl.startsWith('http') ? client.websiteUrl : `https://${client.websiteUrl}`;
+        urlEl.classList.add('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
+        urlEl.classList.remove('text-gray-900', 'dark:text-gray-200');
+    } else {
+        urlEl.innerText = 'Not provided';
+        urlEl.removeAttribute('href');
+        urlEl.classList.remove('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
+        urlEl.classList.add('text-gray-900', 'dark:text-gray-200');
+    }
+    
+    const isCompleted = client.status === 'Completed';
+    const displayAdvance = isCompleted ? (client.price || 0) : (client.advance || 0);
+    const balance = Math.max(0, (Number(client.price) || 0) - Number(displayAdvance));
+    
+    document.getElementById('modal-price').innerText = `₹${(client.price || 0).toLocaleString('en-IN')}`;
+    document.getElementById('modal-advance').innerText = `₹${displayAdvance.toLocaleString('en-IN')}`;
+    
+    const balanceEl = document.getElementById('modal-balance');
+    if (isCompleted || balance <= 0) {
+        balanceEl.innerText = 'Fully Paid';
+        balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
+    } else {
+        balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
+        balanceEl.className = 'font-bold text-xl text-accentRed';
+    }
+    
+    document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
+    document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
+    
+    const statusEl = document.getElementById('modal-status');
+    statusEl.innerText = client.status;
+    statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
+    
+    const addedByEl = document.getElementById('modal-added-by');
+    addedByEl.innerText = `Requested by: ${req.requestedByName} (${req.requestedByEmail})`;
+    addedByEl.classList.remove('hidden');
+    
+    const cleanPhone = client.phone.replace(/[^0-9]/g, '');
+    document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
+    
+    document.getElementById('modal-edit-btn').classList.add('hidden');
+    document.getElementById('modal-delete-btn').classList.add('hidden');
+    
+    renderActivityLog(client);
+    modal.classList.remove('hidden');
+};
+
 window.approveReq = async function(reqId) {
     const req = requestsList.find(r => r.id === reqId);
     if(!req) return;
     try {
+        const approvedClientData = { ...req.clientData };
+        approvedClientData.activityLog = approvedClientData.activityLog || [];
+        approvedClientData.activityLog.push({
+            action: `Approved the update request`,
+            performedBy: ADMIN_NAMES[currentUser.email.toLowerCase()] || "Super Admin",
+            timestamp: Date.now()
+        });
+
         const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', req.targetClientId);
-        await setDoc(clientRef, req.clientData);
+        await setDoc(clientRef, approvedClientData);
+        
         const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
         await updateDoc(reqRef, { status: 'Approved' });
+
+        if (req.requestedByEmail !== currentUser.email) {
+            const notifRef = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', crypto.randomUUID());
+            await setDoc(notifRef, {
+                recipientEmail: req.requestedByEmail,
+                message: `Your request to ${req.type} client "${req.clientData.name}" was approved!`,
+                read: false,
+                createdAt: Date.now(),
+                type: 'success'
+            });
+        }
+
         showToast("Request Approved Successfully", "success");
     } catch(e) { 
         showToast("Error approving request", "error"); 
@@ -910,11 +1150,94 @@ window.approveReq = async function(reqId) {
 };
 
 window.rejectReq = async function(reqId) {
+    const req = requestsList.find(r => r.id === reqId);
+    if(!req) return;
     try {
         const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
         await updateDoc(reqRef, { status: 'Rejected' });
+
+        if (req.requestedByEmail !== currentUser.email) {
+            const notifRef = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', crypto.randomUUID());
+            await setDoc(notifRef, {
+                recipientEmail: req.requestedByEmail,
+                message: `Your request to ${req.type} client "${req.clientData.name}" was rejected.`,
+                read: false,
+                createdAt: Date.now(),
+                type: 'error'
+            });
+        }
+
         showToast("Request Rejected", "info");
     } catch(e) { 
         showToast("Error rejecting request", "error"); 
     }
 };
+
+function renderNotifications() {
+    const myNotifs = notificationsList
+        .filter(n => n.recipientEmail === currentUser.email)
+        .sort((a,b) => b.createdAt - a.createdAt);
+
+    const unreadCount = myNotifs.filter(n => !n.read).length;
+    const badge = document.getElementById('nav-badge-notifications');
+    if (badge) {
+        badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
+        if (unreadCount > 0) badge.classList.remove('hidden');
+        else badge.classList.add('hidden');
+    }
+
+    const listEl = document.getElementById('notifications-list');
+    const emptyEl = document.getElementById('notifications-empty-state');
+    if (!listEl) return;
+
+    listEl.innerHTML = '';
+    if (myNotifs.length === 0) {
+        emptyEl.classList.remove('hidden');
+        emptyEl.classList.add('flex');
+    } else {
+        emptyEl.classList.add('hidden');
+        emptyEl.classList.remove('flex');
+        myNotifs.forEach(n => {
+            const div = document.createElement('div');
+            div.className = `p-3 md:p-4 rounded-xl border ${n.read ? 'bg-gray-50/50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-800' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/30'} flex items-start gap-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50`;
+            div.onclick = () => markNotificationRead(n.id, n.read);
+            
+            const iconColor = n.type === 'success' ? 'text-green-500' : (n.type === 'error' ? 'text-red-500' : 'text-blue-500');
+            const iconClass = n.type === 'success' ? 'ph-check-circle' : (n.type === 'error' ? 'ph-x-circle' : 'ph-info');
+
+            div.innerHTML = `
+                <i class="ph ${iconClass} text-xl ${iconColor} mt-0.5 shrink-0"></i>
+                <div class="flex-1">
+                    <p class="text-sm font-medium ${n.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'}">${n.message}</p>
+                    <p class="text-[10px] md:text-xs text-gray-500 mt-1">${new Date(n.createdAt).toLocaleString('en-IN')}</p>
+                </div>
+                ${!n.read ? '<div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>' : ''}
+            `;
+            listEl.appendChild(div);
+        });
+    }
+}
+
+window.markNotificationRead = async function(id, currentReadStatus) {
+    if (currentReadStatus) return; 
+    try {
+        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', id);
+        await updateDoc(ref, { read: true });
+    } catch(e) {
+        console.error(e);
+    }
+};
+
+window.markAllNotificationsRead = async function() {
+    const unread = notificationsList.filter(n => n.recipientEmail === currentUser.email && !n.read);
+    if (unread.length === 0) return;
+    try {
+        const promises = unread.map(n => {
+            const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', n.id);
+            return updateDoc(ref, { read: true });
+        });
+        await Promise.all(promises);
+    } catch (e) {
+        console.error(e);
+    }
+}
