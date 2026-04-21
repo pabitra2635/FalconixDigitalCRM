@@ -200,13 +200,8 @@ onAuthStateChanged(auth, async (user) => {
             isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
             loggedInEmailText.innerText = user.email;
             
-            if (isSuperAdminUser) {
-                document.getElementById('nav-requests').classList.remove('hidden');
-                document.getElementById('nav-requests').classList.add('flex');
-            } else {
-                document.getElementById('nav-requests').classList.add('hidden');
-                document.getElementById('nav-requests').classList.remove('flex');
-            }
+            document.getElementById('nav-requests').classList.remove('hidden');
+            document.getElementById('nav-requests').classList.add('flex');
 
             loginWrapper.classList.add('opacity-0', 'pointer-events-none');
             setTimeout(() => {
@@ -267,16 +262,14 @@ function setupDatabaseListener() {
         renderNotifications();
     });
 
-    if (isSuperAdminUser) {
-        const reqsRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
-        unsubscribeRequests = onSnapshot(reqsRef, (snapshot) => {
-            requestsList = [];
-            snapshot.forEach(doc => {
-                requestsList.push({ id: doc.id, ...doc.data() });
-            });
-            renderRequestsTable();
+    const reqsRef = collection(db, 'artifacts', appId, 'public', 'data', 'requests');
+    unsubscribeRequests = onSnapshot(reqsRef, (snapshot) => {
+        requestsList = [];
+        snapshot.forEach(doc => {
+            requestsList.push({ id: doc.id, ...doc.data() });
         });
-    }
+        renderRequestsTable();
+    });
 }
 
 document.getElementById('client-form').addEventListener('submit', async (e) => {
@@ -1017,35 +1010,99 @@ function showToast(message, type = 'info') {
 function renderRequestsTable() {
     const tbody = document.getElementById('requests-tbody');
     const emptyState = document.getElementById('requests-empty-state');
+    const theadTr = tbody.previousElementSibling.querySelector('tr');
+    
+    const titleEl = document.querySelector('#view-requests h2');
+    const descEl = document.querySelector('#view-requests p');
+    
     tbody.innerHTML = '';
-    const pendingReqs = requestsList.filter(r => r.status === 'Pending').sort((a,b) => b.createdAt - a.createdAt);
-    if (pendingReqs.length === 0) {
+    
+    let visibleReqs = [];
+    if (isSuperAdminUser) {
+        titleEl.innerText = "Pending Requests";
+        descEl.innerText = "Review client additions and updates from the team.";
+        visibleReqs = requestsList.filter(r => r.status === 'Pending').sort((a,b) => b.createdAt - a.createdAt);
+        
+        theadTr.innerHTML = `
+            <th class="p-3 md:p-4 font-medium">Requested By</th>
+            <th class="p-3 md:p-4 font-medium">Type</th>
+            <th class="p-3 md:p-4 font-medium">Client Name</th>
+            <th class="p-3 md:p-4 font-medium text-right">Actions</th>
+        `;
+    } else {
+        titleEl.innerText = "My Requests";
+        descEl.innerText = "Track the status of your submitted clients and updates.";
+        visibleReqs = requestsList.filter(r => r.requestedByEmail === currentUser.email).sort((a,b) => b.createdAt - a.createdAt);
+        
+        theadTr.innerHTML = `
+            <th class="p-3 md:p-4 font-medium">Date</th>
+            <th class="p-3 md:p-4 font-medium">Type</th>
+            <th class="p-3 md:p-4 font-medium">Client Name</th>
+            <th class="p-3 md:p-4 font-medium text-right">Status</th>
+        `;
+    }
+
+    if (visibleReqs.length === 0) {
         tbody.parentElement.classList.add('hidden');
         emptyState.classList.remove('hidden');
         emptyState.classList.add('flex');
+        
+        if (isSuperAdminUser) {
+            emptyState.querySelector('h3').innerText = "All caught up!";
+            emptyState.querySelector('p').innerText = "There are no pending requests to review.";
+        } else {
+            emptyState.querySelector('h3').innerText = "No requests";
+            emptyState.querySelector('p').innerText = "You haven't submitted any requests yet.";
+        }
     } else {
         tbody.parentElement.classList.remove('hidden');
         emptyState.classList.add('hidden');
         emptyState.classList.remove('flex');
-        pendingReqs.forEach(req => {
+        
+        visibleReqs.forEach(req => {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
-            tr.innerHTML = `
-                <td class="p-3 md:p-4">
+            
+            let col1Html = '';
+            let col4Html = '';
+            
+            if (isSuperAdminUser) {
+                col1Html = `
                     <p class="font-medium text-gray-900 dark:text-gray-200">${req.requestedByName}</p>
                     <p class="text-[10px] md:text-xs text-gray-500">${req.requestedByEmail}</p>
-                </td>
-                <td class="p-3 md:p-4">
-                    <span class="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type}</span>
-                </td>
-                <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${req.clientData.name}</td>
-                <td class="p-3 md:p-4 text-right">
+                `;
+                col4Html = `
                     <div class="flex items-center justify-end gap-2">
                         <button onclick="viewRequestDetails('${req.id}')" class="px-3 py-1.5 bg-blue-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-blue-600 transition-colors">View</button>
                         <button onclick="approveReq('${req.id}')" class="px-3 py-1.5 bg-green-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-green-600 transition-colors">Approve</button>
                         <button onclick="rejectReq('${req.id}')" class="px-3 py-1.5 bg-red-500 text-white rounded-lg text-xs md:text-sm font-medium hover:bg-red-600 transition-colors">Reject</button>
                     </div>
+                `;
+            } else {
+                const d = new Date(req.createdAt);
+                col1Html = `
+                    <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>
+                    <p class="text-[10px] md:text-xs text-gray-500">${d.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</p>
+                `;
+                
+                let statusColor = 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500';
+                if(req.status === 'Approved') statusColor = 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500';
+                if(req.status === 'Rejected') statusColor = 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-500';
+                
+                col4Html = `
+                    <div class="flex items-center justify-end gap-2">
+                        <span class="px-3 py-1 rounded-full text-[10px] md:text-xs font-medium ${statusColor}">${req.status}</span>
+                    </div>
+                `;
+            }
+            
+            tr.innerHTML = `
+                <td class="p-3 md:p-4">${col1Html}</td>
+                <td class="p-3 md:p-4">
+                    <span class="px-2 py-1 rounded-full text-[10px] md:text-xs font-medium ${req.type === 'ADD' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-500'}">${req.type}</span>
                 </td>
+                <td class="p-3 md:p-4 text-gray-900 dark:text-gray-200 font-medium text-sm md:text-base">${req.clientData.name}</td>
+                <td class="p-3 md:p-4 text-right">${col4Html}</td>
             `;
             tbody.appendChild(tr);
         });
