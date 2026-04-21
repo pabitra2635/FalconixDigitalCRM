@@ -690,8 +690,9 @@ function renderLeaderboard() {
     clientsList.forEach(client => {
         const createdAt = new Date(client.createdAt);
         if (createdAt >= startDate && createdAt < endDate) {
-            const email = client.addedByEmail || 'unknown@domain.com';
-            const name = client.addedByName || email.split('@')[0];
+            // Default to Super Admin (Pabitra) if no owner is found
+            const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
+            const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra';
 
             if (!statsMap[email]) {
                 statsMap[email] = { name: name, clientsCount: 0, revenue: 0, email: email };
