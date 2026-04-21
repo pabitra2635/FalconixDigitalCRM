@@ -7,13 +7,15 @@ const SUPER_ADMIN_EMAIL = 'pabitramondal2635@gmail.com';
 const SUPER_ADMINS = [
     'pabitramondal2635@gmail.com',
     'sujata232005@gmail.com',
-    'subhadeep0897@gmail.com'
+    'subhadeep0897@gmail.com',
+    'pabitramondal.ind@gmail.com'
 ];
 
 const ADMIN_NAMES = {
     'pabitramondal2635@gmail.com': 'Pabitra',
     'sujata232005@gmail.com': 'Sujata',
-    'subhadeep0897@gmail.com': 'Subhadeep'
+    'subhadeep0897@gmail.com': 'Subhadeep',
+    'pabitramondal.ind@gmail.com': 'Pabitra (Ind)'
 };
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
