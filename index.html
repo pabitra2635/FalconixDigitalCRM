@@ -84,10 +84,6 @@
             -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
     </style>
 </head>
 <body class="bg-lightBg text-gray-900 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
@@ -135,8 +131,15 @@
                     <span class="font-medium">Add Client</span>
                 </button>
                 <button onclick="navigate('requests')" id="nav-requests" class="nav-btn hidden w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
-                    <i class="ph ph-bell text-xl"></i>
+                    <i class="ph ph-envelope text-xl"></i>
                     <span class="font-medium">Requests</span>
+                </button>
+                <button onclick="navigate('notifications')" id="nav-notifications" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-bell text-xl"></i>
+                        <span class="font-medium">Notifications</span>
+                    </div>
+                    <span id="nav-badge-notifications" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </button>
             </nav>
 
@@ -298,6 +301,39 @@
                                 </div>
                             </div>
                         </div>
+
+                        <!-- Leaderboard Section -->
+                        <div class="mt-8 md:mt-10">
+                            <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
+                                <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Team Performance</h3>
+                                <select id="leaderboard-filter" class="w-full sm:w-48 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                    <option value="this_month" selected>This Month</option>
+                                    <option value="last_month">Last Month</option>
+                                    <option value="this_year">This Year</option>
+                                    <option value="all_time">All Time</option>
+                                </select>
+                            </div>
+                            <div class="glass rounded-2xl overflow-hidden shadow-sm border border-gray-300 dark:border-gray-800">
+                                <div id="leaderboard-table-container" class="overflow-x-auto">
+                                    <table class="w-full text-left border-collapse whitespace-nowrap min-w-[500px]">
+                                        <thead>
+                                            <tr class="bg-gray-200/80 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 text-xs md:text-sm border-b border-gray-300 dark:border-gray-700">
+                                                <th class="p-3 md:p-4 font-medium w-16 text-center">Rank</th>
+                                                <th class="p-3 md:p-4 font-medium">Team Member</th>
+                                                <th class="p-3 md:p-4 font-medium text-center">Clients Added</th>
+                                                <th class="p-3 md:p-4 font-medium text-right">Revenue (Completed)</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="leaderboard-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base bg-white/50 dark:bg-transparent">
+                                        </tbody>
+                                    </table>
+                                </div>
+                                <div id="leaderboard-empty" class="hidden flex-col items-center justify-center py-8 text-center px-4 bg-white/50 dark:bg-transparent">
+                                    <i class="ph ph-medal text-4xl text-gray-400 mb-2"></i>
+                                    <p class="text-sm text-gray-500 dark:text-gray-400">No client data for the selected period.</p>
+                                </div>
+                            </div>
+                        </div>
                     </section>
 
                     <section id="view-client-list" class="view-section">
@@ -307,28 +343,33 @@
                                 <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">Manage and track your agency's clients.</p>
                             </div>
                             <div class="flex flex-wrap items-center gap-3 shrink-0">
-                                <button onclick="exportToCSV()" class="bg-gray-200 hover:bg-gray-300 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 border border-gray-300 dark:border-gray-700 shadow-sm shrink-0">
-                                    <i class="ph ph-download-simple text-lg"></i> Export CSV
-                                </button>
                                 <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
                                     <i class="ph ph-plus text-lg"></i> New Client
                                 </button>
                             </div>
                         </div>
 
-                        <div class="glass p-3 md:p-4 rounded-2xl mb-4 md:mb-6 flex flex-col sm:flex-row gap-3 md:gap-4 border border-gray-300 dark:border-gray-800">
+                        <div class="glass p-3 md:p-4 rounded-2xl mb-4 md:mb-6 flex flex-col lg:flex-row gap-3 md:gap-4 border border-gray-300 dark:border-gray-800">
                             <div class="flex-1 relative">
                                 <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-lg"></i>
                                 <input type="text" id="search-input" placeholder="Search by name or phone..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 pl-11 pr-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                             </div>
-                            <div class="w-full sm:w-48">
-                                <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
-                                    <option value="All">All Statuses</option>
-                                    <option value="Pending">Pending</option>
-                                    <option value="Active">Active</option>
-                                    <option value="Completed">Completed</option>
-                                    <option value="Cancelled">Cancelled</option>
-                                </select>
+                            <div class="flex flex-col sm:flex-row gap-3 md:gap-4 w-full lg:w-auto shrink-0">
+                                <div class="w-full sm:w-48">
+                                    <select id="filter-owner" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                        <option value="All">All Clients</option>
+                                        <option value="Mine">My Clients</option>
+                                    </select>
+                                </div>
+                                <div class="w-full sm:w-48">
+                                    <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                        <option value="All">All Statuses</option>
+                                        <option value="Pending">Pending</option>
+                                        <option value="Active">Active</option>
+                                        <option value="Completed">Completed</option>
+                                        <option value="Cancelled">Cancelled</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
@@ -360,7 +401,7 @@
 
                         <div id="load-more-container" class="hidden flex justify-center mt-6">
                             <button onclick="loadMoreClients()" class="bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-800 dark:text-gray-200 px-6 py-2.5 rounded-xl font-medium transition-colors flex items-center gap-2 shadow-sm">
-                                <i class="ph ph-arrow-down text-lg"></i> Load More Clients
+                                <i class="ph ph-arrow-down text-lg"></i> Load 10 More Clients
                             </button>
                         </div>
                     </section>
@@ -510,6 +551,25 @@
                             </div>
                         </div>
                     </section>
+
+                    <section id="view-notifications" class="view-section max-w-4xl mx-auto">
+                        <div class="mb-6 md:mb-8 flex justify-between items-center gap-4">
+                            <div>
+                                <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Notifications</h2>
+                                <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">Updates on your requests and client activities.</p>
+                            </div>
+                            <button onclick="markAllNotificationsRead()" class="text-sm font-medium text-blue-600 dark:text-blue-500 hover:underline shrink-0">Mark all read</button>
+                        </div>
+                        <div class="glass rounded-2xl overflow-hidden shadow-sm border border-gray-300 dark:border-gray-800 p-3 md:p-5">
+                            <div id="notifications-list" class="flex flex-col gap-3">
+                            </div>
+                            <div id="notifications-empty-state" class="hidden flex-col items-center justify-center py-12 text-center">
+                                <i class="ph ph-bell-slash text-4xl text-gray-400 mb-3"></i>
+                                <h3 class="text-lg font-medium text-gray-900 dark:text-white">No notifications yet</h3>
+                                <p class="text-sm text-gray-500 max-w-sm">You will see alerts here when your requests are approved or rejected.</p>
+                            </div>
+                        </div>
+                    </section>
                 </div>
             </main>
         </div>
@@ -519,7 +579,7 @@
 
     <div id="client-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
         <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-3xl rounded-2xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div class="p-4 md:p-6 border-b border-gray-300 dark:border-gray-800 flex justify-between items-center bg-gray-100/80 dark:bg-gray-900/50">
+            <div class="p-4 md:p-6 border-b border-gray-300 dark:border-gray-800 flex justify-between items-center bg-gray-100/80 dark:bg-gray-900/50 shrink-0">
                 <h3 class="text-xl md:text-2xl font-bold truncate pr-4 text-gray-900 dark:text-white" id="modal-name">Client Name</h3>
                 <button onclick="closeModal()" class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center hover:bg-red-100 hover:text-red-600 transition-colors shrink-0 text-gray-600 dark:text-gray-400">
                     <i class="ph ph-x"></i>
@@ -586,12 +646,23 @@
                     <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-1.5 md:mb-2 font-medium">Notes & Tasks</p>
                     <p class="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-300" id="modal-notes">-</p>
                 </div>
+
+                <hr class="border-gray-300 dark:border-gray-800 my-4 md:my-6">
+                
+                <div>
+                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-3 font-medium">Activity Log</p>
+                    <div id="modal-activity-log" class="space-y-3 px-1">
+                    </div>
+                </div>
             </div>
-            <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3">
+            <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
                 <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2">
                     <i class="ph ph-whatsapp-logo text-xl"></i> WhatsApp
                 </a>
+                <button id="modal-delete-btn" class="hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/40 text-red-600 dark:text-red-500 border border-transparent font-medium transition-colors flex items-center justify-center gap-2">
+                    <i class="ph ph-trash text-lg"></i> Delete
+                </button>
                 <button id="modal-edit-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent font-medium transition-colors flex items-center justify-center gap-2">
                     <i class="ph ph-pencil-simple text-lg"></i> Edit Details
                 </button>
@@ -617,6 +688,24 @@
         </div>
     </div>
 
-    <script type="module" src="falconixdigitalCRM.js"></script>
+    <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
+        <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-accentRed flex items-center justify-center mb-4">
+                <i class="ph ph-warning-circle text-3xl"></i>
+            </div>
+            <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Delete Client</h3>
+            <p class="text-gray-600 dark:text-gray-400 mb-6 text-sm">Are you sure you want to permanently delete this client? This action cannot be undone.</p>
+            <div class="flex w-full gap-3">
+                <button onclick="hideDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent">
+                    Cancel
+                </button>
+                <button id="confirm-delete-btn" class="flex-1 py-2.5 rounded-xl bg-accentRed hover:bg-accentRedHover text-white font-medium transition-colors shadow-lg shadow-red-500/30">
+                    Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="./app.js"></script>
 </body>
 </html>
