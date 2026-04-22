@@ -259,7 +259,7 @@ onAuthStateChanged(auth, async (user) => {
             setupDatabaseListener();
         } else {
             await signOut(auth);
-            loginError.innerText = "Unauthorized email detected. Session terminated.";
+            loginError.innerText = "Access Denied: Email not authorized as Admin.";
             loginError.classList.remove('hidden');
             googleLoginBtn.innerHTML = defaultBtnHtml;
         }
@@ -543,13 +543,13 @@ function updateDashboardStats() {
     document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
     document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
     
-    // Overall Profit: Base Revenue + Maintenance (excluding Extra Charges/Hosting)
+    // Mot Labh: Base Revenue + Maintenance (Extra Charges/Hosting baad diye)
     const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
         const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
         return sum + baseRevenue + (Number(client.maintenanceCharge) || 0);
     }, 0);
     
-    // Pending Payments includes the extra charges since the client still owes them
+    // Pending Payments er modhye extra charges ontorbhukto kora hoyeche karon client er ekhono baki ache
     const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         const paid = calculatePaidAmount(client);
@@ -789,7 +789,7 @@ function renderLeaderboard() {
                 if (maintenance > 0) {
                     if (!statsMap[SUPER_ADMIN_EMAIL]) {
                         statsMap[SUPER_ADMIN_EMAIL] = { 
-                            name: ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra', 
+                            name: ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal', 
                             clientsCount: 0, 
                             revenue: 0, 
                             email: SUPER_ADMIN_EMAIL 
@@ -1158,128 +1158,150 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// --- INVOICE GENERATOR LOGIC ---
+// --- INVOICE GENERATOR LOGIC (FAIL-SAFE VERSION) ---
+
+const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
 window.openInvoiceModal = function(clientId) {
     const client = clientsList.find(c => c.id === clientId);
     if (!client) return;
 
     const invoiceNo = `FD-${client.createdAt.toString().slice(-6)}`;
-    document.getElementById('inv-no').innerText = invoiceNo;
-    document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
-    document.getElementById('inv-due-date').innerText = client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion';
-
-    document.getElementById('inv-client-name').innerText = client.name;
-    document.getElementById('inv-client-business').innerText = client.business || 'N/A';
-    document.getElementById('inv-client-address').innerText = client.address || 'Address not provided';
-    document.getElementById('inv-client-phone').innerText = client.phone;
-    document.getElementById('inv-client-email').innerText = client.email || 'N/A';
+    
+    // HTML element gulote nirapode text assign kora
+    setElText('inv-no', invoiceNo);
+    setElText('inv-date', new Date().toLocaleDateString('en-IN'));
+    setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
+    setElText('inv-client-name', client.name);
+    setElText('inv-client-business', client.business || 'N/A');
+    setElText('inv-client-address', client.address || 'Address not provided');
+    setElText('inv-client-phone', client.phone);
+    setElText('inv-client-email', client.email || 'N/A');
 
     const deliveryDaysEl = document.getElementById('inv-delivery-days');
-    if (client.deadline) {
-        const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
-    } else {
-        deliveryDaysEl.innerText = '7 - 14';
+    if (deliveryDaysEl) {
+        if (client.deadline) {
+            const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
+            const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+            deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
+        } else {
+            deliveryDaysEl.innerText = '7 - 14';
+        }
     }
 
     const tbody = document.getElementById('inv-table-body');
-    tbody.innerHTML = '';
-    let subtotal = 0;
+    if (tbody) {
+        tbody.innerHTML = '';
+        let subtotal = 0;
 
-    const addRow = (desc, amount) => {
-        if (amount > 0) {
-            subtotal += amount;
-            const tr = document.createElement('tr');
-            tr.className = 'hover:bg-gray-50';
-            tr.innerHTML = `
-                <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
-                <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
-                <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
-                <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
-            `;
-            tbody.appendChild(tr);
+        const addRow = (desc, amount) => {
+            if (amount > 0) {
+                subtotal += amount;
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50';
+                tr.innerHTML = `
+                    <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
+                    <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
+                    <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                    <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                `;
+                tbody.appendChild(tr);
+            }
+        };
+
+        addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
+        addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
+        addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
+
+        const discount = Number(client.discount) || 0;
+        const total = Math.max(0, subtotal - discount);
+        const paidAmount = calculatePaidAmount(client);
+        const balance = Math.max(0, total - paidAmount);
+
+        setElText('inv-subtotal', `₹${subtotal.toLocaleString('en-IN')}`);
+        setElText('inv-discount', `- ₹${discount.toLocaleString('en-IN')}`);
+        setElText('inv-total', `₹${total.toLocaleString('en-IN')}`);
+        setElText('inv-paid', `- ₹${paidAmount.toLocaleString('en-IN')}`);
+        setElText('inv-balance', `₹${balance.toLocaleString('en-IN')}`);
+
+        const stamp = document.getElementById('inv-paid-stamp');
+        if (stamp) {
+            if ((balance <= 0 && total > 0) || client.status === 'Completed') {
+                stamp.classList.remove('hidden');
+            } else {
+                stamp.classList.add('hidden');
+            }
         }
-    };
-
-    addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
-    addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
-    addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
-
-    // Summaries and Payment Logic
-    const discount = Number(client.discount) || 0;
-    const total = Math.max(0, subtotal - discount);
-    
-    document.getElementById('inv-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
-    document.getElementById('inv-discount').innerText = `- ₹${discount.toLocaleString('en-IN')}`;
-    document.getElementById('inv-total').innerText = `₹${total.toLocaleString('en-IN')}`;
-
-    const paidAmount = calculatePaidAmount(client);
-    const balance = Math.max(0, total - paidAmount);
-
-    document.getElementById('inv-paid').innerText = `- ₹${paidAmount.toLocaleString('en-IN')}`;
-    document.getElementById('inv-balance').innerText = `₹${balance.toLocaleString('en-IN')}`;
-
-    const stamp = document.getElementById('inv-paid-stamp');
-    if ((balance <= 0 && total > 0) || client.status === 'Completed') {
-        stamp.classList.remove('hidden');
-    } else {
-        stamp.classList.add('hidden');
     }
 
-    // Inject Payment Milestones into Invoice
     const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
     const milestonesList = document.getElementById('inv-milestones-list');
-    milestonesList.innerHTML = '';
     
-    if (client.installments && client.installments.length > 0) {
-        milestonesWrapper.classList.remove('hidden');
-        client.installments.forEach(inst => {
-            const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
-            const isPaid = inst.status === 'Paid';
-            const statusColor = isPaid ? 'text-green-600' : 'text-accentRed';
-            
+    // Invoice e Payment Milestones inject kora
+    if (milestonesWrapper && milestonesList) {
+        milestonesList.innerHTML = '';
+        if (client.installments && client.installments.length > 0) {
+            milestonesWrapper.classList.remove('hidden');
+            client.installments.forEach(inst => {
+                const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
+                const isPaid = inst.status === 'Paid';
+                const statusColor = isPaid ? 'text-green-600' : 'text-accentRed';
+                
+                const row = document.createElement('div');
+                row.className = 'flex justify-between text-xs text-gray-600';
+                row.innerHTML = `
+                    <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
+                    <span class="w-1/4">${dateText}</span>
+                    <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+                `;
+                milestonesList.appendChild(row);
+            });
+        } else if (client.advance > 0) {
+            milestonesWrapper.classList.remove('hidden');
             const row = document.createElement('div');
             row.className = 'flex justify-between text-xs text-gray-600';
             row.innerHTML = `
-                <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
-                <span class="w-1/4">${dateText}</span>
-                <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+                <span class="w-1/2 font-medium">Advance Payment</span>
+                <span class="w-1/4">-</span>
+                <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
             `;
             milestonesList.appendChild(row);
-        });
-    } else if (client.advance > 0) {
-        milestonesWrapper.classList.remove('hidden');
-        const row = document.createElement('div');
-        row.className = 'flex justify-between text-xs text-gray-600';
-        row.innerHTML = `
-            <span class="w-1/2 font-medium">Advance Payment</span>
-            <span class="w-1/4">-</span>
-            <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
-        `;
-        milestonesList.appendChild(row);
-    } else {
-        milestonesWrapper.classList.add('hidden');
+        } else {
+            milestonesWrapper.classList.add('hidden');
+        }
     }
 
-    // Store filename for download
+    // Download er jonno filename store kora
     window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
 
-    // Show Modal
-    document.getElementById('invoice-modal').classList.remove('hidden');
-    document.getElementById('invoice-modal').classList.add('flex');
+    // Modal dekhano
+    const invModal = document.getElementById('invoice-modal');
+    if (invModal) {
+        invModal.classList.remove('hidden');
+        invModal.classList.add('flex');
+    } else {
+        showToast('Invoice layout structure is missing.', 'error');
+    }
 };
 
 window.closeInvoiceModal = function() {
-    document.getElementById('invoice-modal').classList.add('hidden');
-    document.getElementById('invoice-modal').classList.remove('flex');
+    const invModal = document.getElementById('invoice-modal');
+    if (invModal) {
+        invModal.classList.add('hidden');
+        invModal.classList.remove('flex');
+    }
 };
 
 window.downloadInvoicePDF = function() {
     const element = document.getElementById('invoice-content');
-    const btn = document.querySelector('#invoice-modal button:last-child');
+    const btn = document.getElementById('btn-download-pdf');
     
+    if (!element) {
+        showToast('Cannot find invoice content.', 'error');
+        return;
+    }
+
+    // A4 Document er jonno html2pdf settings configure kora
     const opt = {
         margin:       0,
         filename:     window.currentInvoiceFilename || 'Falconix_Invoice.pdf',
@@ -1288,19 +1310,35 @@ window.downloadInvoicePDF = function() {
         jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
     
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating...`;
-    btn.disabled = true;
+    let originalHtml = '';
+    if (btn) {
+        originalHtml = btn.innerHTML;
+        btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating...`;
+        btn.disabled = true;
+    }
 
-    html2pdf().set(opt).from(element).save().then(() => {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        showToast('Invoice PDF Downloaded Successfully!', 'success');
-    }).catch(err => {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-        showToast('Error generating PDF', 'error');
-    });
+    // PDF toiri ebong Download kora
+    try {
+        html2pdf().set(opt).from(element).save().then(() => {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+            showToast('Invoice PDF Downloaded Successfully!', 'success');
+        }).catch(err => {
+            if (btn) {
+                btn.innerHTML = originalHtml;
+                btn.disabled = false;
+            }
+            showToast('Error saving PDF file.', 'error');
+        });
+    } catch(err) {
+        showToast('PDF Library failed to load.', 'error');
+        if (btn) {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    }
 };
 
 function renderRequestsTable() {
