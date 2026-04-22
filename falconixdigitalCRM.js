@@ -1,6 +1,6 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
 const SUPER_ADMIN_EMAIL = 'pabitramondal2635@gmail.com';
 
@@ -38,9 +38,11 @@ let isSuperAdminUser = false;
 let clientsList = [];
 let requestsList = [];
 let notificationsList = [];
+let expensesList = [];
 let unsubscribeClients = null;
 let unsubscribeRequests = null;
 let unsubscribeNotifications = null;
+let unsubscribeExpenses = null;
 
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
@@ -104,7 +106,6 @@ function calculatePaidAmount(client) {
         paid = Number(client.advance) || 0;
     }
     
-    // Automatically assume fully paid if status is 'Completed'
     if (client.status === 'Completed') {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         return Math.max(paid, expected);
@@ -256,6 +257,19 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
 
+            if (isSuperAdminUser) {
+                document.getElementById('nav-expenses').classList.remove('hidden');
+                document.getElementById('nav-expenses').classList.add('flex');
+                
+                const expCard = document.getElementById('stat-card-expenses');
+                expCard.classList.remove('hidden');
+                expCard.classList.add('flex');
+                
+                const netCard = document.getElementById('stat-card-net-profit');
+                netCard.classList.remove('hidden');
+                netCard.classList.add('flex');
+            }
+
             loginWrapper.classList.add('opacity-0', 'pointer-events-none');
             setTimeout(() => {
                 loginWrapper.classList.add('hidden');
@@ -278,6 +292,7 @@ onAuthStateChanged(auth, async (user) => {
         if(unsubscribeClients) unsubscribeClients();
         if(unsubscribeRequests) unsubscribeRequests();
         if(unsubscribeNotifications) unsubscribeNotifications();
+        if(unsubscribeExpenses) unsubscribeExpenses();
         appWrapper.classList.add('hidden');
         appWrapper.classList.remove('flex');
         loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -323,6 +338,104 @@ function setupDatabaseListener() {
         });
         renderRequestsTable();
     });
+
+    if (isSuperAdminUser) {
+        const expRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
+        unsubscribeExpenses = onSnapshot(expRef, (snapshot) => {
+            expensesList = [];
+            snapshot.forEach(doc => {
+                expensesList.push({ id: doc.id, ...doc.data() });
+            });
+            expensesList.sort((a,b) => new Date(b.date) - new Date(a.date));
+            renderExpenses();
+            updateDashboardStats(); 
+        });
+    }
+}
+
+document.getElementById('expense-form').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!isSuperAdminUser) return;
+    
+    const btn = document.getElementById('exp-submit-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-lg"></i> Logging...`;
+    btn.disabled = true;
+
+    try {
+        const newExp = {
+            description: document.getElementById('exp-desc').value.trim(),
+            amount: parseFloat(document.getElementById('exp-amount').value),
+            category: document.getElementById('exp-category').value,
+            date: document.getElementById('exp-date').value,
+            addedAt: Date.now()
+        };
+        const ref = doc(collection(db, 'artifacts', appId, 'public', 'data', 'expenses'));
+        await setDoc(ref, newExp);
+        
+        document.getElementById('expense-form').reset();
+        document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+        showToast("Expense logged successfully!", "success");
+    } catch (err) {
+        showToast("Error logging expense.", "error");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+});
+
+function renderExpenses() {
+    const tbody = document.getElementById('expenses-tbody');
+    const empty = document.getElementById('expenses-empty');
+    const totalDisplay = document.getElementById('exp-total-display');
+    
+    tbody.innerHTML = '';
+    
+    const total = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+    totalDisplay.innerText = `₹${total.toLocaleString('en-IN')}`;
+
+    if (expensesList.length === 0) {
+        tbody.parentElement.classList.add('hidden');
+        empty.classList.remove('hidden');
+        empty.classList.add('flex');
+    } else {
+        tbody.parentElement.classList.remove('hidden');
+        empty.classList.add('hidden');
+        empty.classList.remove('flex');
+        
+        expensesList.forEach(exp => {
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-gray-50/50 dark:hover:bg-gray-800/30 border-b border-gray-200 dark:border-gray-800/50 last:border-0 transition-colors";
+            
+            let catColor = "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
+            if(exp.category === 'Hosting/Domain') catColor = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500";
+            if(exp.category === 'Freelancer') catColor = "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-500";
+            if(exp.category === 'Marketing') catColor = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-500";
+
+            tr.innerHTML = `
+                <td class="p-3 text-gray-600 dark:text-gray-400">${new Date(exp.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}</td>
+                <td class="p-3 font-medium text-gray-900 dark:text-gray-200">${exp.description}</td>
+                <td class="p-3">
+                    <span class="px-2.5 py-1 rounded-lg text-[10px] font-semibold tracking-wide ${catColor}">${exp.category}</span>
+                </td>
+                <td class="p-3 text-right font-bold text-red-500">- ₹${Number(exp.amount).toLocaleString('en-IN')}</td>
+                <td class="p-3 text-center">
+                    <button onclick="deleteExpense('${exp.id}')" class="text-gray-400 hover:text-red-500 transition-colors p-1"><i class="ph ph-trash text-lg"></i></button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+    }
+}
+
+window.deleteExpense = async function(id) {
+    if (!confirm("Are you sure you want to delete this expense log?")) return;
+    try {
+        await deleteDoc(doc(db, 'artifacts', appId, 'public', 'data', 'expenses', id));
+        showToast("Expense removed.", "success");
+    } catch(e) {
+        showToast("Error deleting expense.", "error");
+    }
 }
 
 document.getElementById('client-form').addEventListener('submit', async (e) => {
@@ -404,6 +517,17 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
                 targetClientId: isEditing ? clientId : reqId,
                 createdAt: Date.now()
             });
+
+            // 🔔 NEW: Generate a notification so Super Admins know a request arrived
+            const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+            await setDoc(notifRef, {
+                recipientEmail: 'all',
+                message: `New Request: ${addedName} wants to ${isEditing ? 'update' : 'add'} client "${clientData.name}".`,
+                readBy: [],
+                createdAt: Date.now(),
+                type: 'info'
+            });
+
             showToast("Request sent to Super Admin for approval.", "success");
         }
         document.getElementById('client-form').reset();
@@ -467,6 +591,9 @@ window.navigate = function(viewId, isEdit = false) {
     }
     if(viewId === 'notifications') {
         renderNotifications();
+    }
+    if(viewId === 'expenses') {
+        document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
     }
 };
 
@@ -549,13 +676,12 @@ function updateDashboardStats() {
     document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
     document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
     
-    // Mot Labh: Base Revenue + Maintenance (Extra Charges/Hosting baad diye)
+    // Gross Profit: Base Revenue + Maintenance
     const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
         const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
         return sum + baseRevenue + (Number(client.maintenanceCharge) || 0);
     }, 0);
     
-    // Pending Payments er modhye extra charges ontorbhukto kora hoyeche karon client er ekhono baki ache
     const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         const paid = calculatePaidAmount(client);
@@ -572,6 +698,19 @@ function updateDashboardStats() {
     const pendingEl = document.getElementById('stat-pending-payments');
     pendingEl.innerText = formattedPending;
     pendingEl.title = formattedPending;
+
+    // Advanced True Net Profit Calculation for Super Admin
+    const totalExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
+    const totalExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+    
+    // True Net Profit = (Gross Base + Maint) + (Gross Extra) - (Total Operational Expenses)
+    const trueNetProfit = (totalProfit + totalExtraCharges) - totalExpenses;
+
+    const expEl = document.getElementById('stat-total-expenses');
+    if(expEl) expEl.innerText = '₹' + totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    
+    const netEl = document.getElementById('stat-net-profit');
+    if(netEl) netEl.innerText = '₹' + trueNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
     const recentBody = document.getElementById('recent-clients-tbody');
     recentBody.innerHTML = '';
@@ -675,7 +814,7 @@ function updateCharts() {
             const y = d.getFullYear();
             const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
             if (monthObj) {
-                monthObj.revenue += (Number(client.price) || 0) + (Number(client.maintenanceCharge) || 0);
+                monthObj.revenue += Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.maintenanceCharge) || 0);
             }
         }
     });
@@ -779,7 +918,7 @@ function renderLeaderboard() {
         const createdAt = new Date(client.createdAt);
         if (createdAt >= startDate && createdAt < endDate) {
             const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
-            const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra';
+            const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal';
 
             if (!statsMap[email]) {
                 statsMap[email] = { name: name, clientsCount: 0, revenue: 0, email: email };
@@ -1167,8 +1306,6 @@ function showToast(message, type = 'info') {
     }, 3000);
 }
 
-// --- INVOICE GENERATOR LOGIC (FAIL-SAFE VERSION) ---
-
 const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
 window.openInvoiceModal = function(clientId) {
@@ -1177,7 +1314,6 @@ window.openInvoiceModal = function(clientId) {
 
     const invoiceNo = `FD-${client.createdAt.toString().slice(-6)}`;
     
-    // HTML element gulote nirapode text assign kora
     setElText('inv-no', invoiceNo);
     setElText('inv-date', new Date().toLocaleDateString('en-IN'));
     setElText('inv-due-date', client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion');
@@ -1246,7 +1382,6 @@ window.openInvoiceModal = function(clientId) {
     const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
     const milestonesList = document.getElementById('inv-milestones-list');
     
-    // Invoice e Payment Milestones inject kora
     if (milestonesWrapper && milestonesList) {
         milestonesList.innerHTML = '';
         if (client.installments && client.installments.length > 0) {
@@ -1280,10 +1415,8 @@ window.openInvoiceModal = function(clientId) {
         }
     }
 
-    // Download er jonno filename store kora
     window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
 
-    // Modal dekhano
     const invModal = document.getElementById('invoice-modal');
     if (invModal) {
         invModal.classList.remove('hidden');
@@ -1310,7 +1443,6 @@ window.downloadInvoicePDF = function() {
         return;
     }
 
-    // A4 Document er jonno html2pdf settings configure kora
     const opt = {
         margin:       0,
         filename:     window.currentInvoiceFilename || 'Falconix_Invoice.pdf',
@@ -1326,7 +1458,6 @@ window.downloadInvoicePDF = function() {
         btn.disabled = true;
     }
 
-    // PDF toiri ebong Download kora
     try {
         html2pdf().set(opt).from(element).save().then(() => {
             if (btn) {
@@ -1484,13 +1615,14 @@ window.viewRequestDetails = function(reqId) {
     
     const extraCharge = Number(client.extraCharge) || 0;
     const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+    const discount = Number(client.discount) || 0;
     const paidAmount = calculatePaidAmount(client);
-    const totalExpected = (Number(client.price) || 0) + extraCharge + maintenanceCharge;
+    const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
     const balance = Math.max(0, totalExpected - paidAmount);
 
     document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
     document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
-    document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
+    document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Discount: ₹${discount.toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
 
     const balanceEl = document.getElementById('modal-balance');
     if (client.status === 'Completed' || balance <= 0) {
@@ -1503,7 +1635,10 @@ window.viewRequestDetails = function(reqId) {
 
     let instHtml = '';
     if (client.installments && client.installments.length > 0) {
-        instHtml = client.installments.map(i => `
+        instHtml = client.installments.map(i => {
+            const isPaid = i.status === 'Paid' || client.status === 'Completed';
+            const displayStatus = client.status === 'Completed' ? 'Paid' : i.status;
+            return `
             <div class="flex justify-between items-center py-2.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
                 <div>
                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${i.title || 'Installment'}</p>
@@ -1511,10 +1646,10 @@ window.viewRequestDetails = function(reqId) {
                 </div>
                 <div class="text-right">
                     <p class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">₹${Number(i.amount).toLocaleString('en-IN')}</p>
-                    <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${i.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${i.status}</span>
+                    <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${isPaid ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${displayStatus}</span>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } else {
         instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded.</p>';
     }
@@ -1568,7 +1703,7 @@ window.approveReq = async function(reqId) {
             await setDoc(notifRef, {
                 recipientEmail: req.requestedByEmail,
                 message: `Your request to ${req.type} client "${req.clientData.name}" was approved!`,
-                read: false,
+                readBy: [],
                 createdAt: Date.now(),
                 type: 'success'
             });
@@ -1592,7 +1727,7 @@ window.rejectReq = async function(reqId) {
             await setDoc(notifRef, {
                 recipientEmail: req.requestedByEmail,
                 message: `Your request to ${req.type} client "${req.clientData.name}" was rejected.`,
-                read: false,
+                readBy: [],
                 createdAt: Date.now(),
                 type: 'error'
             });
@@ -1606,10 +1741,9 @@ window.rejectReq = async function(reqId) {
 
 function renderNotifications() {
     const myNotifs = notificationsList
-        .filter(n => n.recipientEmail === currentUser.email)
         .sort((a,b) => b.createdAt - a.createdAt);
 
-    const unreadCount = myNotifs.filter(n => !n.read).length;
+    const unreadCount = myNotifs.filter(n => n.readBy ? !n.readBy.includes(currentUser.email) : !n.read).length;
     const badge = document.getElementById('nav-badge-notifications');
     if (badge) {
         badge.innerText = unreadCount > 9 ? '9+' : unreadCount;
@@ -1629,9 +1763,10 @@ function renderNotifications() {
         emptyEl.classList.add('hidden');
         emptyEl.classList.remove('flex');
         myNotifs.forEach(n => {
+            const isRead = n.readBy ? n.readBy.includes(currentUser.email) : n.read;
             const div = document.createElement('div');
-            div.className = `p-3 md:p-4 rounded-xl border ${n.read ? 'bg-gray-50/50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-800' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/30'} flex items-start gap-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50`;
-            div.onclick = () => markNotificationRead(n.id, n.read);
+            div.className = `p-3 md:p-4 rounded-xl border ${isRead ? 'bg-gray-50/50 dark:bg-gray-800/20 border-gray-200 dark:border-gray-800' : 'bg-blue-50 dark:bg-blue-900/10 border-blue-200 dark:border-blue-800/30'} flex items-start gap-3 cursor-pointer transition-colors hover:bg-gray-100 dark:hover:bg-gray-800/50`;
+            div.onclick = () => markNotificationRead(n.id, isRead);
             
             const iconColor = n.type === 'success' ? 'text-green-500' : (n.type === 'error' ? 'text-red-500' : 'text-blue-500');
             const iconClass = n.type === 'success' ? 'ph-check-circle' : (n.type === 'error' ? 'ph-x-circle' : 'ph-info');
@@ -1639,33 +1774,39 @@ function renderNotifications() {
             div.innerHTML = `
                 <i class="ph ${iconClass} text-xl ${iconColor} mt-0.5 shrink-0"></i>
                 <div class="flex-1">
-                    <p class="text-sm font-medium ${n.read ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'}">${n.message}</p>
+                    <p class="text-sm font-medium ${isRead ? 'text-gray-700 dark:text-gray-300' : 'text-gray-900 dark:text-gray-100'}">${n.message}</p>
                     <p class="text-[10px] md:text-xs text-gray-500 mt-1">${new Date(n.createdAt).toLocaleString('en-IN')}</p>
                 </div>
-                ${!n.read ? '<div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>' : ''}
+                ${!isRead ? '<div class="w-2 h-2 rounded-full bg-blue-500 mt-1.5 shrink-0"></div>' : ''}
             `;
             listEl.appendChild(div);
         });
     }
 }
 
-window.markNotificationRead = async function(id, currentReadStatus) {
-    if (currentReadStatus) return; 
+window.markNotificationRead = async function(id, isRead) {
+    if (isRead) return; 
     try {
         const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', id);
-        await updateDoc(ref, { read: true });
+        await updateDoc(ref, { 
+            readBy: arrayUnion(currentUser.email),
+            read: true
+        });
     } catch(e) {
         console.error(e);
     }
 };
 
 window.markAllNotificationsRead = async function() {
-    const unread = notificationsList.filter(n => n.recipientEmail === currentUser.email && !n.read);
+    const unread = notificationsList.filter(n => n.readBy ? !n.readBy.includes(currentUser.email) : !n.read);
     if (unread.length === 0) return;
     try {
         const promises = unread.map(n => {
             const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', n.id);
-            return updateDoc(ref, { read: true });
+            return updateDoc(ref, { 
+                readBy: arrayUnion(currentUser.email),
+                read: true
+            });
         });
         await Promise.all(promises);
     } catch (e) {
