@@ -169,9 +169,12 @@
                     <i class="ph ph-user-plus text-xl"></i>
                     <span class="font-medium">Add Client</span>
                 </button>
-                <button onclick="navigate('requests')" id="nav-requests" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
-                    <i class="ph ph-envelope text-xl"></i>
-                    <span class="font-medium">Requests</span>
+                <button onclick="navigate('requests')" id="nav-requests" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
+                    <div class="flex items-center gap-3">
+                        <i class="ph ph-envelope text-xl"></i>
+                        <span class="font-medium">Requests</span>
+                    </div>
+                    <span id="nav-badge-requests" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </button>
                 <button onclick="navigate('expenses')" id="nav-expenses" class="hidden nav-btn w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
                     <i class="ph ph-receipt text-xl"></i>
