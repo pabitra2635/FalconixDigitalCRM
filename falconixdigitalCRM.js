@@ -364,6 +364,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         website: document.getElementById('form-website').value,
         websiteUrl: document.getElementById('form-website-url').value.trim(),
         price: parseFloat(document.getElementById('form-price').value) || 0,
+        discount: parseFloat(document.getElementById('form-discount').value) || 0,
         extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
         maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
         installments: getInstallmentsData(),
@@ -505,6 +506,7 @@ window.editClient = function(id) {
     document.getElementById('form-website').value = client.website;
     document.getElementById('form-website-url').value = client.websiteUrl || '';
     document.getElementById('form-price').value = client.price || '';
+    document.getElementById('form-discount').value = client.discount || '';
     document.getElementById('form-extra-charge').value = client.extraCharge || '';
     document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
     document.getElementById('form-deadline').value = client.deadline || '';
@@ -541,12 +543,15 @@ function updateDashboardStats() {
     document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
     document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
     
-    // Overall Profit: Project Price + Maintenance (excluding Extra Charges/Hosting)
-    const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.price) || 0) + (Number(client.maintenanceCharge) || 0), 0);
+    // Overall Profit: Base Revenue + Maintenance (excluding Extra Charges/Hosting)
+    const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
+        const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
+        return sum + baseRevenue + (Number(client.maintenanceCharge) || 0);
+    }, 0);
     
     // Pending Payments includes the extra charges since the client still owes them
     const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
-        const expected = (Number(client.price) || 0) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+        const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         const paid = calculatePaidAmount(client);
         return sum + Math.max(0, expected - paid);
     }, 0);
@@ -570,7 +575,7 @@ function updateDashboardStats() {
         tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-800/50 last:border-0";
         tr.onclick = () => openModal(client.id);
         
-        const expected = (Number(client.price) || 0) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+        const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         const paid = calculatePaidAmount(client);
         const balance = Math.max(0, expected - paid);
 
@@ -777,7 +782,8 @@ function renderLeaderboard() {
             statsMap[email].clientsCount++;
             
             if (client.status === 'Completed') {
-                statsMap[email].revenue += (Number(client.price) || 0);
+                const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
+                statsMap[email].revenue += baseRevenue;
                 
                 const maintenance = Number(client.maintenanceCharge) || 0;
                 if (maintenance > 0) {
@@ -881,7 +887,7 @@ function renderClientTable(resetPage = false) {
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
             
-            const expected = (Number(client.price) || 0) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+            const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
             const paid = calculatePaidAmount(client);
             const balance = Math.max(0, expected - paid);
 
@@ -1000,14 +1006,15 @@ window.openModal = function(id) {
     
     const extraCharge = Number(client.extraCharge) || 0;
     const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+    const discount = Number(client.discount) || 0;
     const paidAmount = calculatePaidAmount(client);
-    const totalExpected = (Number(client.price) || 0) + extraCharge + maintenanceCharge;
+    const totalExpected = Math.max(0, (Number(client.price) || 0) - discount) + extraCharge + maintenanceCharge;
     const balance = Math.max(0, totalExpected - paidAmount);
 
     document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
     document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
     
-    document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
+    document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Discount: ₹${discount.toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
 
     const balanceEl = document.getElementById('modal-balance');
     if (client.status === 'Completed' || balance <= 0) {
@@ -1200,12 +1207,66 @@ window.openInvoiceModal = function(clientId) {
     addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
     addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
 
+    // Summaries and Payment Logic
+    const discount = Number(client.discount) || 0;
+    const total = Math.max(0, subtotal - discount);
+    
     document.getElementById('inv-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
-    document.getElementById('inv-discount').innerText = `₹0`;
-    document.getElementById('inv-total').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+    document.getElementById('inv-discount').innerText = `- ₹${discount.toLocaleString('en-IN')}`;
+    document.getElementById('inv-total').innerText = `₹${total.toLocaleString('en-IN')}`;
 
+    const paidAmount = calculatePaidAmount(client);
+    const balance = Math.max(0, total - paidAmount);
+
+    document.getElementById('inv-paid').innerText = `- ₹${paidAmount.toLocaleString('en-IN')}`;
+    document.getElementById('inv-balance').innerText = `₹${balance.toLocaleString('en-IN')}`;
+
+    const stamp = document.getElementById('inv-paid-stamp');
+    if ((balance <= 0 && total > 0) || client.status === 'Completed') {
+        stamp.classList.remove('hidden');
+    } else {
+        stamp.classList.add('hidden');
+    }
+
+    // Inject Payment Milestones into Invoice
+    const milestonesWrapper = document.getElementById('inv-payment-milestones-wrapper');
+    const milestonesList = document.getElementById('inv-milestones-list');
+    milestonesList.innerHTML = '';
+    
+    if (client.installments && client.installments.length > 0) {
+        milestonesWrapper.classList.remove('hidden');
+        client.installments.forEach(inst => {
+            const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
+            const isPaid = inst.status === 'Paid';
+            const statusColor = isPaid ? 'text-green-600' : 'text-accentRed';
+            
+            const row = document.createElement('div');
+            row.className = 'flex justify-between text-xs text-gray-600';
+            row.innerHTML = `
+                <span class="w-1/2 font-medium">${inst.title || 'Milestone'}</span>
+                <span class="w-1/4">${dateText}</span>
+                <span class="w-1/4 text-right font-semibold ${statusColor}">${isPaid ? 'Paid' : 'Due'}: ₹${Number(inst.amount).toLocaleString('en-IN')}</span>
+            `;
+            milestonesList.appendChild(row);
+        });
+    } else if (client.advance > 0) {
+        milestonesWrapper.classList.remove('hidden');
+        const row = document.createElement('div');
+        row.className = 'flex justify-between text-xs text-gray-600';
+        row.innerHTML = `
+            <span class="w-1/2 font-medium">Advance Payment</span>
+            <span class="w-1/4">-</span>
+            <span class="w-1/4 text-right font-semibold text-green-600">Paid: ₹${Number(client.advance).toLocaleString('en-IN')}</span>
+        `;
+        milestonesList.appendChild(row);
+    } else {
+        milestonesWrapper.classList.add('hidden');
+    }
+
+    // Store filename for download
     window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
 
+    // Show Modal
     document.getElementById('invoice-modal').classList.remove('hidden');
     document.getElementById('invoice-modal').classList.add('flex');
 };
@@ -1563,4 +1624,4 @@ window.markAllNotificationsRead = async function() {
     } catch (e) {
         console.error(e);
     }
-} 
+}
