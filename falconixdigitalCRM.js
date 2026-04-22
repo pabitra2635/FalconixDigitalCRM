@@ -143,21 +143,12 @@ googleLoginBtn.addEventListener('click', async () => {
     loginError.classList.add('hidden');
     googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
     try {
-        const result = await signInWithPopup(auth, googleProvider);
-        const user = result.user;
-        const isAdmin = await checkIfAdmin(user.email);
-        if (!isAdmin) {
-            await signOut(auth);
-            loginError.innerText = "Access Denied: Email not authorized as Admin.";
-            loginError.classList.remove('hidden');
-        }
+        await signInWithPopup(auth, googleProvider);
     } catch (error) {
-        loginError.innerText = "Login process was cancelled or failed.";
+        console.error("Firebase Auth Error:", error);
+        loginError.innerText = "Error: " + error.message;
         loginError.classList.remove('hidden');
-    } finally {
-        if (!currentUser) {
-            googleLoginBtn.innerHTML = defaultBtnHtml;
-        }
+        googleLoginBtn.innerHTML = defaultBtnHtml;
     }
 });
 
@@ -255,50 +246,58 @@ function startContinuousTypewriter(name) {
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        const isAdmin = await checkIfAdmin(user.email);
-        if (isAdmin) {
-            currentUser = user;
-            isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
-            loggedInEmailText.innerText = user.email;
-            
-            document.getElementById('nav-requests').classList.remove('hidden');
-            document.getElementById('nav-requests').classList.add('flex');
+        try {
+            const isAdmin = await checkIfAdmin(user.email);
+            if (isAdmin) {
+                currentUser = user;
+                isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+                loggedInEmailText.innerText = user.email;
+                
+                document.getElementById('nav-requests').classList.remove('hidden');
+                document.getElementById('nav-requests').classList.add('flex');
 
-            const expCard = document.getElementById('stat-card-expenses');
-            if (expCard) {
-                expCard.classList.remove('hidden');
-                expCard.classList.add('flex');
-            }
-            
-            const netCard = document.getElementById('stat-card-net-profit');
-            if (netCard) {
-                netCard.classList.remove('hidden');
-                netCard.classList.add('flex');
-            }
-
-            if (isSuperAdminUser) {
-                const navExp = document.getElementById('nav-expenses');
-                if (navExp) {
-                    navExp.classList.remove('hidden');
-                    navExp.classList.add('flex');
+                const expCard = document.getElementById('stat-card-expenses');
+                if (expCard) {
+                    expCard.classList.remove('hidden');
+                    expCard.classList.add('flex');
                 }
-            }
+                
+                const netCard = document.getElementById('stat-card-net-profit');
+                if (netCard) {
+                    netCard.classList.remove('hidden');
+                    netCard.classList.add('flex');
+                }
 
-            loginWrapper.classList.add('opacity-0', 'pointer-events-none');
-            setTimeout(() => {
-                loginWrapper.classList.add('hidden');
-                appWrapper.classList.remove('hidden');
-                appWrapper.classList.add('flex');
-                const defaultName = user.email.split('@')[0];
-                const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
-                startContinuousTypewriter(adminName);
-            }, 500);
-            setupDatabaseListener();
-        } else {
-            await signOut(auth);
-            loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                if (isSuperAdminUser) {
+                    const navExp = document.getElementById('nav-expenses');
+                    if (navExp) {
+                        navExp.classList.remove('hidden');
+                        navExp.classList.add('flex');
+                    }
+                }
+
+                loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+                setTimeout(() => {
+                    loginWrapper.classList.add('hidden');
+                    appWrapper.classList.remove('hidden');
+                    appWrapper.classList.add('flex');
+                    const defaultName = user.email.split('@')[0];
+                    const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                    startContinuousTypewriter(adminName);
+                }, 500);
+                setupDatabaseListener();
+            } else {
+                await signOut(auth);
+                loginError.innerText = "Access Denied: Email not authorized as Admin.";
+                loginError.classList.remove('hidden');
+                googleLoginBtn.innerHTML = defaultBtnHtml;
+            }
+        } catch (err) {
+            console.error("System Sync Error:", err);
+            loginError.innerText = "System Error: " + err.message;
             loginError.classList.remove('hidden');
             googleLoginBtn.innerHTML = defaultBtnHtml;
+            await signOut(auth);
         }
     } else {
         currentUser = null;
@@ -942,27 +941,12 @@ function updateCharts() {
 
 function renderLeaderboard() {
     const filterEl = document.getElementById('leaderboard-filter');
-    const customDateFilters = document.getElementById('custom-date-filters');
-    const startEl = document.getElementById('leaderboard-start');
-    const endEl = document.getElementById('leaderboard-end');
     const tbody = document.getElementById('leaderboard-tbody');
     const emptyState = document.getElementById('leaderboard-empty');
     const tableContainer = document.getElementById('leaderboard-table-container');
-    
     if(!filterEl || !tbody || !emptyState || !tableContainer) return;
     
     const filter = filterEl.value;
-    
-    // Toggle Custom Date Inputs
-    if (customDateFilters) {
-        if (filter === 'custom') {
-            customDateFilters.classList.remove('hidden');
-            customDateFilters.classList.add('flex');
-        } else {
-            customDateFilters.classList.add('hidden');
-            customDateFilters.classList.remove('flex');
-        }
-    }
 
     const now = new Date();
     let startDate = new Date(0);
@@ -975,22 +959,13 @@ function renderLeaderboard() {
         endDate = new Date(now.getFullYear(), now.getMonth(), 1);
     } else if (filter === 'this_year') {
         startDate = new Date(now.getFullYear(), 0, 1);
-    } else if (filter === 'custom') {
-        if (startEl && startEl.value) {
-            startDate = new Date(startEl.value);
-            startDate.setHours(0, 0, 0, 0);
-        }
-        if (endEl && endEl.value) {
-            endDate = new Date(endEl.value);
-            endDate.setHours(23, 59, 59, 999);
-        }
     }
 
     const statsMap = {};
 
     clientsList.forEach(client => {
         const createdAt = new Date(client.createdAt);
-        if (createdAt >= startDate && createdAt <= endDate) {
+        if (createdAt >= startDate && createdAt < endDate) {
             const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
             const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal';
 
@@ -1069,12 +1044,6 @@ function renderLeaderboard() {
 
 const leaderboardFilter = document.getElementById('leaderboard-filter');
 if(leaderboardFilter) leaderboardFilter.addEventListener('change', renderLeaderboard);
-
-const leaderStart = document.getElementById('leaderboard-start');
-if(leaderStart) leaderStart.addEventListener('change', renderLeaderboard);
-
-const leaderEnd = document.getElementById('leaderboard-end');
-if(leaderEnd) leaderEnd.addEventListener('change', renderLeaderboard);
 
 window.loadMoreClients = function() {
     currentPage++;
@@ -1588,25 +1557,7 @@ function updateRequestsBadge() {
     if (!isSuperAdminUser) return;
     
     const pendingCount = requestsList.filter(r => r.status === 'Pending').length;
-    let badge = document.getElementById('nav-badge-requests');
-    
-    if (!badge) {
-        const navBtn = document.getElementById('nav-requests');
-        if (navBtn) {
-            navBtn.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="ph ph-envelope text-xl"></i>
-                    <span class="font-medium">Requests</span>
-                </div>
-                <span id="nav-badge-requests" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto">0</span>
-            `;
-            
-            navBtn.classList.remove('gap-3');
-            navBtn.classList.add('justify-between');
-            
-            badge = document.getElementById('nav-badge-requests');
-        }
-    }
+    const badge = document.getElementById('nav-badge-requests');
     
     if (badge) {
         badge.innerText = pendingCount > 9 ? '9+' : pendingCount;
@@ -1684,11 +1635,9 @@ function renderRequestsTable() {
             let col4Html = '';
             
             if (isSuperAdminUser) {
-                const d = new Date(req.createdAt);
                 col1Html = `
                     <p class="font-medium text-gray-900 dark:text-gray-200">${req.requestedByName}</p>
-                    <p class="text-[10px] md:text-xs text-gray-500 mb-1">${req.requestedByEmail}</p>
-                    <p class="text-[9px] md:text-[10px] text-blue-600 dark:text-blue-400 font-medium"><i class="ph ph-clock"></i> ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})} at ${d.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</p>
+                    <p class="text-[10px] md:text-xs text-gray-500">${req.requestedByEmail}</p>
                 `;
                 col4Html = `
                     <div class="flex items-center justify-end gap-2">
@@ -1809,8 +1758,7 @@ window.viewRequestDetails = function(reqId) {
     
     const addedByEl = document.getElementById('modal-added-by');
     if (req.requestedByName) {
-        const reqDate = new Date(req.createdAt);
-        addedByEl.innerHTML = `Requested by: <b>${req.requestedByName}</b><br><span class="text-[10px] text-gray-500 mt-1 block"><i class="ph ph-clock"></i> Sent on ${reqDate.toLocaleDateString('en-IN', {day:'numeric', month:'short', year:'numeric'})} at ${reqDate.toLocaleTimeString('en-IN', {hour: '2-digit', minute:'2-digit'})}</span>`;
+        addedByEl.innerText = `Requested by: ${req.requestedByName} (${req.requestedByEmail})`;
         addedByEl.classList.remove('hidden');
     } else {
         addedByEl.classList.add('hidden');
