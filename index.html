@@ -93,13 +93,7 @@
             animation: spin 1s linear infinite;
         }
 
-        body {
-            font-family: 'Poppins', sans-serif;
-            background-color: #E5E7EB;
-            -webkit-print-color-adjust: exact !important;
-            print-color-adjust: exact !important;
-        }
-
+        /* Invoice PDF Styles */
         .a4-container {
             width: 210mm;
             min-height: 297mm;
@@ -128,27 +122,6 @@
             display: flex;
             flex-direction: column;
             min-height: calc(297mm - 30mm);
-        }
-
-        @media print {
-            @page {
-                size: A4;
-                margin: 0;
-            }
-            body {
-                background-color: white;
-                margin: 0;
-            }
-            .a4-container {
-                margin: 0;
-                box-shadow: none;
-                width: 210mm;
-                height: 297mm;
-                padding: 15mm 20mm;
-            }
-            .no-print {
-                display: none !important;
-            }
         }
     </style>
 </head>
@@ -199,6 +172,10 @@
                 <button onclick="navigate('requests')" id="nav-requests" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
                     <i class="ph ph-envelope text-xl"></i>
                     <span class="font-medium">Requests</span>
+                </button>
+                <button onclick="navigate('expenses')" id="nav-expenses" class="hidden nav-btn w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
+                    <i class="ph ph-receipt text-xl"></i>
+                    <span class="font-medium">Expenses</span>
                 </button>
                 <button onclick="navigate('notifications')" id="nav-notifications" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
                     <div class="flex items-center gap-3">
@@ -252,8 +229,8 @@
                             <span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
-                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4 md:gap-6 mb-8 md:mb-10">
-                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+                        <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Total Clients</p>
@@ -265,7 +242,7 @@
                                 </div>
                             </div>
                             
-                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Active Projects</p>
@@ -277,7 +254,7 @@
                                 </div>
                             </div>
 
-                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Completed</p>
@@ -289,11 +266,11 @@
                                 </div>
                             </div>
 
-                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
                                     <div>
-                                        <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Total Profit</p>
-                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-gray-900 dark:text-white" id="stat-total-profit" title="0">₹0</h3>
+                                        <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Gross Profit</p>
+                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-purple-600 dark:text-purple-500" id="stat-total-profit" title="0">₹0</h3>
                                     </div>
                                     <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-500 shrink-0">
                                         <i class="ph ph-currency-inr text-xl"></i>
@@ -301,7 +278,7 @@
                                 </div>
                             </div>
 
-                            <div class="glass p-5 rounded-2xl flex flex-col justify-between">
+                            <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Pending Payments</p>
@@ -309,6 +286,30 @@
                                     </div>
                                     <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed shrink-0">
                                         <i class="ph ph-wallet text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="stat-card-expenses" class="hidden flex-col justify-between p-5 rounded-2xl glass border border-red-200 dark:border-red-900/50 bg-red-50/50 dark:bg-red-900/10 shadow-sm">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs text-gray-700 dark:text-gray-300 font-bold uppercase tracking-wider">Total Expenses</p>
+                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-red-600 dark:text-red-500" id="stat-total-expenses" title="0">₹0</h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-white dark:bg-darkCard flex items-center justify-center text-red-600 dark:text-red-500 shadow-sm shrink-0">
+                                        <i class="ph ph-trend-down text-xl"></i>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div id="stat-card-net-profit" class="hidden flex-col justify-between p-5 rounded-2xl glass border border-green-400 dark:border-green-600/50 bg-green-50/80 dark:bg-green-900/20 shadow-md">
+                                <div class="flex justify-between items-start">
+                                    <div>
+                                        <p class="text-xs text-gray-800 dark:text-gray-200 font-black uppercase tracking-wider">True Net Profit</p>
+                                        <h3 class="text-2xl md:text-3xl font-black mt-2 truncate text-green-600 dark:text-green-500 drop-shadow-sm" id="stat-net-profit" title="0">₹0</h3>
+                                    </div>
+                                    <div class="w-10 h-10 rounded-full bg-white dark:bg-darkCard flex items-center justify-center text-green-600 dark:text-green-500 shadow-sm shrink-0">
+                                        <i class="ph ph-scales text-xl"></i>
                                     </div>
                                 </div>
                             </div>
@@ -640,6 +641,77 @@
                         </div>
                     </section>
 
+                    <section id="view-expenses" class="view-section max-w-5xl mx-auto">
+                        <div class="mb-6 md:mb-8">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Agency Expenses</h2>
+                            <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">Track your operational costs and calculate True Net Profit.</p>
+                        </div>
+                        
+                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                            <div class="lg:col-span-1">
+                                <form id="expense-form" class="glass p-5 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-800 space-y-4">
+                                    <h3 class="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i class="ph ph-receipt text-accentRed text-lg"></i> Log New Expense</h3>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Description *</label>
+                                        <input type="text" id="exp-desc" required placeholder="e.g. Hostinger Server Renewal" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Amount (₹) *</label>
+                                        <input type="number" id="exp-amount" required min="1" step="0.01" placeholder="3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Category</label>
+                                        <select id="exp-category" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed appearance-none cursor-pointer">
+                                            <option value="Hosting/Domain">Hosting / Domain</option>
+                                            <option value="Freelancer">Freelancer / Contractor</option>
+                                            <option value="Software">Software / Tools</option>
+                                            <option value="Marketing">Ads / Marketing</option>
+                                            <option value="Other">Other</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Date *</label>
+                                        <input type="date" id="exp-date" required class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed appearance-none">
+                                    </div>
+                                    <button type="submit" id="exp-submit-btn" class="w-full bg-brandDark hover:bg-blue-900 text-white py-2.5 rounded-xl font-medium transition-colors mt-2 flex justify-center items-center gap-2 shadow-md">
+                                        <i class="ph ph-plus-circle text-lg"></i> Add Expense
+                                    </button>
+                                </form>
+                            </div>
+                            
+                            <div class="lg:col-span-2">
+                                <div class="glass rounded-2xl overflow-hidden shadow-sm border border-gray-300 dark:border-gray-800 h-full flex flex-col">
+                                    <div class="p-4 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center bg-gray-50/50 dark:bg-gray-800/30">
+                                        <h3 class="font-bold text-gray-900 dark:text-white">Expense History</h3>
+                                        <div class="text-sm font-semibold text-gray-700 dark:text-gray-300">Total Logged: <span id="exp-total-display" class="text-red-600 dark:text-red-500 bg-red-50 dark:bg-red-900/30 px-2 py-0.5 rounded-md ml-1">₹0</span></div>
+                                    </div>
+                                    <div class="overflow-x-auto flex-1 max-h-[500px]">
+                                        <table class="w-full text-left border-collapse whitespace-nowrap min-w-[500px]">
+                                            <thead class="sticky top-0 z-10">
+                                                <tr class="bg-gray-200/90 dark:bg-gray-800/90 backdrop-blur-sm text-gray-700 dark:text-gray-400 text-xs border-b border-gray-300 dark:border-gray-700">
+                                                    <th class="p-3 font-medium">Date</th>
+                                                    <th class="p-3 font-medium">Description</th>
+                                                    <th class="p-3 font-medium">Category</th>
+                                                    <th class="p-3 font-medium text-right">Amount</th>
+                                                    <th class="p-3 font-medium text-center w-10"></th>
+                                                </tr>
+                                            </thead>
+                                            <tbody id="expenses-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm bg-white/50 dark:bg-transparent">
+                                            </tbody>
+                                        </table>
+                                        <div id="expenses-empty" class="hidden flex-col items-center justify-center py-16 text-center px-4">
+                                            <div class="w-16 h-16 bg-gray-100 dark:bg-gray-800 rounded-full flex items-center justify-center mb-3">
+                                                <i class="ph ph-receipt text-3xl text-gray-400"></i>
+                                            </div>
+                                            <p class="text-sm font-medium text-gray-900 dark:text-gray-200 mb-1">No expenses recorded yet.</p>
+                                            <p class="text-xs text-gray-500">Log your first agency cost using the form.</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
                     <section id="view-notifications" class="view-section max-w-4xl mx-auto">
                         <div class="mb-6 md:mb-8 flex justify-between items-center gap-4">
                             <div>
@@ -755,10 +827,10 @@
             </div>
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
-                <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-blue-900 text-white font-medium transition-colors flex items-center justify-center gap-2">
+                <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-blue-900 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-file-pdf text-xl"></i> Invoice
                 </button>
-                <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2">
+                <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-whatsapp-logo text-xl"></i> WhatsApp
                 </a>
                 <button id="modal-delete-btn" class="hidden w-full sm:w-auto px-4 py-2.5 rounded-xl bg-red-100 dark:bg-red-900/20 hover:bg-red-200 dark:hover:bg-red-900/40 text-red-600 dark:text-red-500 border border-transparent font-medium transition-colors flex items-center justify-center gap-2">
@@ -771,9 +843,7 @@
         </div>
     </div>
 
-    <!-- INVOICE MODAL (Fully Updated Structure) -->
     <div id="invoice-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex-col items-center p-4 md:p-8 overflow-y-auto font-poppins">
-        <!-- Action Bar -->
         <div class="w-full max-w-[210mm] flex justify-between items-center mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shrink-0">
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
                 <i class="ph ph-x-circle text-2xl"></i> Close
@@ -783,12 +853,9 @@
             </button>
         </div>
 
-        <!-- A4 Printable Area -->
         <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
-            <!-- Watermark -->
             <img src="https://i.ibb.co/n80NN2gZ/Falconix-Digital-Logo.png" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
             
-            <!-- PAID Stamp overlay -->
             <div id="inv-paid-stamp" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transform -rotate-[15deg]">
                 <div class="border-[12px] border-green-500/30 rounded-3xl px-16 py-8 inline-block shadow-sm">
                     <p class="text-green-500/30 font-black text-7xl md:text-8xl uppercase tracking-[0.3em] m-0 leading-none">PAID</p>
@@ -796,7 +863,6 @@
             </div>
 
             <div class="relative z-10 flex flex-col h-full">
-                <!-- Header -->
                 <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
                     <div class="flex items-center gap-4">
                         <img src="https://i.ibb.co/n80NN2gZ/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-16 h-16 rounded-xl shadow-md border border-gray-100 object-cover">
@@ -822,7 +888,6 @@
                     </div>
                 </div>
 
-                <!-- Addresses -->
                 <div class="grid grid-cols-2 gap-12 mb-10">
                     <div>
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">From</h3>
@@ -842,7 +907,6 @@
                     </div>
                 </div>
 
-                <!-- Table -->
                 <div class="mb-8">
                     <table class="w-full text-left border-collapse">
                         <thead>
@@ -854,12 +918,11 @@
                             </tr>
                         </thead>
                         <tbody id="inv-table-body" class="divide-y divide-gray-200">
-                            <!-- Injected rows -->
+                            
                         </tbody>
                     </table>
                 </div>
 
-                <!-- Summary & Payment -->
                 <div class="flex justify-between items-start gap-8 mb-10">
                     <div class="flex-1">
                         <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
@@ -902,12 +965,11 @@
                     </div>
                 </div>
 
-                <!-- Notes & Footer -->
                 <div class="mt-auto">
                     <div class="mb-6 hidden" id="inv-payment-milestones-wrapper">
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Payment Milestones</h3>
                         <div id="inv-milestones-list" class="space-y-1.5">
-                            <!-- Injected rows -->
+                            
                         </div>
                     </div>
 
