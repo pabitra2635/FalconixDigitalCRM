@@ -550,17 +550,21 @@
                                         <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Project Price (₹) *</label>
                                         <input type="number" id="form-price" required min="0" step="0.01" placeholder="e.g. 20000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                     <div>
-                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Extra Charges (Domain/Hosting)</label>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Discount (₹)</label>
+                                        <input type="number" id="form-discount" min="0" step="0.01" placeholder="e.g. 2000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Extra Charges (Domain)</label>
                                         <input type="number" id="form-extra-charge" min="0" step="0.01" placeholder="e.g. 3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                     <div>
-                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Maintenance Charge (₹)</label>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Maintenance (₹)</label>
                                         <input type="number" id="form-maintenance-charge" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                 </div>
@@ -780,6 +784,12 @@
         <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
             <img src="https://i.ibb.co/n80NN2gZ/Falconix-Digital-Logo.png" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
             
+            <div id="inv-paid-stamp" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transform -rotate-[15deg]">
+                <div class="border-[12px] border-green-500/30 rounded-3xl px-16 py-8 inline-block shadow-sm">
+                    <p class="text-green-500/30 font-black text-7xl md:text-8xl uppercase tracking-[0.3em] m-0 leading-none">PAID</p>
+                </div>
+            </div>
+
             <div class="relative z-10 flex flex-col h-full">
                 <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
                     <div class="flex items-center gap-4">
@@ -843,11 +853,17 @@
 
                 <div class="flex justify-between items-start gap-8 mb-10">
                     <div class="flex-1">
-                        <div class="bg-brandGray p-5 rounded-xl border border-gray-200 shadow-sm">
-                            <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-brandOrange text-lg"></i> Payment Method</h3>
-                            <div class="space-y-1.5 text-sm">
-                                <p class="text-gray-600"><span class="font-medium w-24 inline-block">UPI ID:</span> <span class="text-brandDark font-semibold">pabitramondal2635@oksbi</span></p>
-                                <p class="text-gray-600"><span class="font-medium w-24 inline-block">Account Name:</span> <span class="text-brandDark font-semibold">Pabitra Mondal</span></p>
+                        <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-brandOrange text-lg"></i> Payment Method</h3>
+                                <div class="space-y-1.5 text-sm">
+                                    <p class="text-gray-600"><span class="font-medium w-24 inline-block">UPI ID:</span> <span class="text-brandDark font-semibold">pabitramondal2635@oksbi</span></p>
+                                    <p class="text-gray-600"><span class="font-medium w-24 inline-block">Account Name:</span> <span class="text-brandDark font-semibold">Pabitra Mondal</span></p>
+                                </div>
+                            </div>
+                            <div class="flex flex-col items-center pl-5 border-l border-gray-300 ml-2 shrink-0">
+                                <img src="https://i.ibb.co/wr8prtqY/Payment-QR.jpg" alt="Scan to Pay QR" class="w-[72px] h-[72px] object-cover rounded-lg border border-gray-200 bg-white shadow-sm p-0.5">
+                                <span class="text-[9px] font-bold text-brandDark mt-1.5 uppercase tracking-wider">Scan to Pay</span>
                             </div>
                         </div>
                     </div>
@@ -857,19 +873,26 @@
                                 <span class="font-medium">Subtotal:</span>
                                 <span id="inv-subtotal" class="font-semibold text-gray-800">₹0</span>
                             </div>
-                            <div class="flex justify-between text-gray-600 border-b border-gray-200 pb-3">
-                                <span class="font-medium">Discount:</span>
-                                <span id="inv-discount" class="font-semibold text-gray-800">₹0</span>
+                            <div class="flex justify-between text-green-600">
+                                <span class="font-medium">Amount Paid:</span>
+                                <span id="inv-paid" class="font-semibold">- ₹0</span>
                             </div>
-                            <div class="flex justify-between items-center text-lg">
-                                <span class="font-bold text-brandDark">Total Amount:</span>
-                                <span id="inv-total" class="font-bold text-brandOrange">₹0</span>
+                            <div class="flex justify-between items-center text-lg border-t border-gray-200 pt-2">
+                                <span class="font-bold text-brandDark">Balance Due:</span>
+                                <span id="inv-balance" class="font-bold text-accentRed">₹0</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="mt-auto">
+                    <div class="mb-6 hidden" id="inv-payment-milestones-wrapper">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Payment Milestones</h3>
+                        <div id="inv-milestones-list" class="space-y-1.5">
+                            <!-- Injected rows go here -->
+                        </div>
+                    </div>
+
                     <div class="mb-8">
                         <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Terms & Notes</h3>
                         <ul class="text-xs text-gray-500 space-y-1.5 list-disc list-inside">
@@ -881,8 +904,10 @@
 
                     <div class="flex justify-between items-end pt-6 border-t-2 border-brandDark/10">
                         <p class="text-brandDark font-semibold italic text-sm">"Thank you for your business!"</p>
-                        <div class="text-center">
-                            <div class="w-40 border-b-2 border-brandDark mb-2 h-10"></div>
+                        <div class="text-center flex flex-col items-center">
+                            <div class="w-40 border-b-2 border-brandDark mb-2 flex justify-center pb-1">
+                                <img src="https://i.ibb.co/9Hc54PS8/Pabitra-Mondal-Signature.jpg" alt="Signature" class="h-10 object-contain mix-blend-multiply" crossorigin="anonymous">
+                            </div>
                             <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Authorized Signature</p>
                             <p class="text-xs text-gray-400 mt-1">Falconix Digital</p>
                         </div>
