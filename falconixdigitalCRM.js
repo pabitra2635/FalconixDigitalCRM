@@ -97,10 +97,19 @@ function getInstallmentsData() {
 }
 
 function calculatePaidAmount(client) {
+    let paid = 0;
     if (client.installments && client.installments.length > 0) {
-        return client.installments.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+        paid = client.installments.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    } else {
+        paid = Number(client.advance) || 0;
     }
-    return Number(client.advance) || 0;
+    
+    // Automatically assume fully paid if status is 'Completed'
+    if (client.status === 'Completed') {
+        const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+        return Math.max(paid, expected);
+    }
+    return paid;
 }
 
 async function checkIfAdmin(email) {
@@ -1027,7 +1036,10 @@ window.openModal = function(id) {
 
     let instHtml = '';
     if (client.installments && client.installments.length > 0) {
-        instHtml = client.installments.map(i => `
+        instHtml = client.installments.map(i => {
+            const isPaid = i.status === 'Paid' || client.status === 'Completed';
+            const displayStatus = client.status === 'Completed' ? 'Paid' : i.status;
+            return `
             <div class="flex justify-between items-center py-2.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
                 <div>
                     <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${i.title || 'Installment'}</p>
@@ -1035,10 +1047,10 @@ window.openModal = function(id) {
                 </div>
                 <div class="text-right">
                     <p class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">₹${Number(i.amount).toLocaleString('en-IN')}</p>
-                    <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${i.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${i.status}</span>
+                    <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${isPaid ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${displayStatus}</span>
                 </div>
             </div>
-        `).join('');
+        `}).join('');
     } else {
         instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded for this client.</p>';
     }
@@ -1244,7 +1256,7 @@ window.openInvoiceModal = function(clientId) {
             milestonesWrapper.classList.remove('hidden');
             client.installments.forEach(inst => {
                 const dateText = inst.date ? new Date(inst.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'}) : 'N/A';
-                const isPaid = inst.status === 'Paid';
+                const isPaid = inst.status === 'Paid' || client.status === 'Completed';
                 const statusColor = isPaid ? 'text-green-600' : 'text-accentRed';
                 
                 const row = document.createElement('div');
