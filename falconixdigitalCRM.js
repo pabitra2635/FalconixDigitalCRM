@@ -1492,25 +1492,7 @@ function updateRequestsBadge() {
     if (!isSuperAdminUser) return;
     
     const pendingCount = requestsList.filter(r => r.status === 'Pending').length;
-    let badge = document.getElementById('nav-badge-requests');
-    
-    if (!badge) {
-        const navBtn = document.getElementById('nav-requests');
-        if (navBtn) {
-            navBtn.innerHTML = `
-                <div class="flex items-center gap-3">
-                    <i class="ph ph-envelope text-xl"></i>
-                    <span class="font-medium">Requests</span>
-                </div>
-                <span id="nav-badge-requests" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto">0</span>
-            `;
-            
-            navBtn.classList.remove('gap-3');
-            navBtn.classList.add('justify-between');
-            
-            badge = document.getElementById('nav-badge-requests');
-        }
-    }
+    const badge = document.getElementById('nav-badge-requests');
     
     if (badge) {
         badge.innerText = pendingCount > 9 ? '9+' : pendingCount;
@@ -1850,3 +1832,5 @@ window.markAllNotificationsRead = async function() {
         console.error(e);
     }
 }
+
+updateRequestsBadge()
