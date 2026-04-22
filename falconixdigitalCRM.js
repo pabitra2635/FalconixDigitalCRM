@@ -1713,16 +1713,14 @@ window.approveReq = async function(reqId) {
         const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
         await updateDoc(reqRef, { status: 'Approved' });
 
-        if (req.requestedByEmail !== currentUser.email) {
-            const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
-            await setDoc(notifRef, {
-                recipientEmail: req.requestedByEmail,
-                message: `Your request to ${req.type} client "${req.clientData.name}" was approved!`,
-                readBy: [],
-                createdAt: Date.now(),
-                type: 'success'
-            });
-        }
+        const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+        await setDoc(notifRef, {
+            recipientEmail: 'all',
+            message: `${req.requestedByName}'s request to ${req.type.toLowerCase()} client "${req.clientData.name}" was approved!`,
+            readBy: [],
+            createdAt: Date.now(),
+            type: 'success'
+        });
 
         showToast("Request Approved Successfully", "success");
     } catch(e) { 
@@ -1737,16 +1735,14 @@ window.rejectReq = async function(reqId) {
         const reqRef = doc(db, 'artifacts', appId, 'public', 'data', 'requests', reqId);
         await updateDoc(reqRef, { status: 'Rejected' });
 
-        if (req.requestedByEmail !== currentUser.email) {
-            const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
-            await setDoc(notifRef, {
-                recipientEmail: req.requestedByEmail,
-                message: `Your request to ${req.type} client "${req.clientData.name}" was rejected.`,
-                readBy: [],
-                createdAt: Date.now(),
-                type: 'error'
-            });
-        }
+        const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
+        await setDoc(notifRef, {
+            recipientEmail: 'all',
+            message: `${req.requestedByName}'s request to ${req.type.toLowerCase()} client "${req.clientData.name}" was rejected.`,
+            readBy: [],
+            createdAt: Date.now(),
+            type: 'error'
+        });
 
         showToast("Request Rejected", "info");
     } catch(e) { 
