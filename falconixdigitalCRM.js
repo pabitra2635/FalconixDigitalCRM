@@ -458,7 +458,6 @@ window.navigate = function(viewId, isEdit = false) {
         document.getElementById('client-id').value = "";
         document.getElementById('client-form').reset();
         document.getElementById('installments-container').innerHTML = '';
-        addInstallmentRow(); 
     }
     if(viewId === 'client-list' || viewId === 'dashboard') {
         renderClientTable(true);
@@ -527,8 +526,6 @@ window.editClient = function(id) {
         client.installments.forEach(inst => addInstallmentRow(inst.title, inst.amount, inst.date, inst.status));
     } else if (client.advance > 0) {
         addInstallmentRow('Advance', client.advance, '', 'Paid');
-    } else {
-        addInstallmentRow(); 
     }
 
     document.getElementById('form-title').innerText = "Edit Client Details";
