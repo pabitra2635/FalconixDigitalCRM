@@ -340,6 +340,7 @@ function setupDatabaseListener() {
             requestsList.push({ id: doc.id, ...doc.data() });
         });
         renderRequestsTable();
+        updateRequestsBadge();
     });
 
     // Everyone needs to read expenses to calculate True Net Profit on the dashboard
@@ -1495,6 +1496,37 @@ window.downloadInvoicePDF = function() {
         }
     }
 };
+
+function updateRequestsBadge() {
+    if (!isSuperAdminUser) return;
+    
+    const pendingCount = requestsList.filter(r => r.status === 'Pending').length;
+    let badge = document.getElementById('nav-badge-requests');
+    
+    if (!badge) {
+        const navBtn = document.getElementById('nav-requests');
+        if (navBtn) {
+            navBtn.classList.remove('gap-3');
+            navBtn.classList.add('justify-between');
+            
+            const badgeSpan = document.createElement('span');
+            badgeSpan.id = 'nav-badge-requests';
+            badgeSpan.className = 'hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto';
+            navBtn.appendChild(badgeSpan);
+            
+            badge = badgeSpan;
+        }
+    }
+    
+    if (badge) {
+        badge.innerText = pendingCount > 9 ? '9+' : pendingCount;
+        if (pendingCount > 0) {
+            badge.classList.remove('hidden');
+        } else {
+            badge.classList.add('hidden');
+        }
+    }
+}
 
 function renderRequestsTable() {
     const tbody = document.getElementById('requests-tbody');
