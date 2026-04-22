@@ -106,6 +106,7 @@ function calculatePaidAmount(client) {
         paid = Number(client.advance) || 0;
     }
     
+    // Automatically assume fully paid if status is 'Completed'
     if (client.status === 'Completed') {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         return Math.max(paid, expected);
@@ -257,17 +258,19 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
 
+            // Make True Net Profit & Expenses stats visible to ALL admins
+            const expCard = document.getElementById('stat-card-expenses');
+            expCard.classList.remove('hidden');
+            expCard.classList.add('flex');
+            
+            const netCard = document.getElementById('stat-card-net-profit');
+            netCard.classList.remove('hidden');
+            netCard.classList.add('flex');
+
+            // ONLY Super Admin sees the detailed Expenses tab in the sidebar
             if (isSuperAdminUser) {
                 document.getElementById('nav-expenses').classList.remove('hidden');
                 document.getElementById('nav-expenses').classList.add('flex');
-                
-                const expCard = document.getElementById('stat-card-expenses');
-                expCard.classList.remove('hidden');
-                expCard.classList.add('flex');
-                
-                const netCard = document.getElementById('stat-card-net-profit');
-                netCard.classList.remove('hidden');
-                netCard.classList.add('flex');
             }
 
             loginWrapper.classList.add('opacity-0', 'pointer-events-none');
@@ -339,18 +342,20 @@ function setupDatabaseListener() {
         renderRequestsTable();
     });
 
-    if (isSuperAdminUser) {
-        const expRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
-        unsubscribeExpenses = onSnapshot(expRef, (snapshot) => {
-            expensesList = [];
-            snapshot.forEach(doc => {
-                expensesList.push({ id: doc.id, ...doc.data() });
-            });
-            expensesList.sort((a,b) => new Date(b.date) - new Date(a.date));
-            renderExpenses();
-            updateDashboardStats(); 
+    // Everyone needs to read expenses to calculate True Net Profit on the dashboard
+    const expRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
+    unsubscribeExpenses = onSnapshot(expRef, (snapshot) => {
+        expensesList = [];
+        snapshot.forEach(doc => {
+            expensesList.push({ id: doc.id, ...doc.data() });
         });
-    }
+        expensesList.sort((a,b) => new Date(b.date) - new Date(a.date));
+        
+        if (isSuperAdminUser) {
+            renderExpenses();
+        }
+        updateDashboardStats(); 
+    });
 }
 
 document.getElementById('expense-form').addEventListener('submit', async (e) => {
@@ -391,8 +396,11 @@ function renderExpenses() {
     
     tbody.innerHTML = '';
     
-    const total = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
-    totalDisplay.innerText = `₹${total.toLocaleString('en-IN')}`;
+    const totalManual = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
+    const totalAutoExtra = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
+    
+    // Display the breakdown clearly in the UI
+    totalDisplay.innerHTML = `Manual: <span class="font-bold">₹${totalManual.toLocaleString('en-IN')}</span> + Auto (Extra): <span class="font-bold">₹${totalAutoExtra.toLocaleString('en-IN')}</span>`;
 
     if (expensesList.length === 0) {
         tbody.parentElement.classList.add('hidden');
@@ -518,7 +526,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
                 createdAt: Date.now()
             });
 
-            // 🔔 NEW: Generate a notification so Super Admins know a request arrived
+            // 🔔 Generate a universal notification so everyone knows a request arrived
             const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
             await setDoc(notifRef, {
                 recipientEmail: 'all',
@@ -676,38 +684,45 @@ function updateDashboardStats() {
     document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
     document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
     
-    // Gross Profit: Base Revenue + Maintenance
-    const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
+    // 1. Calculate Total Gross Revenue (Base + Extra + Maint - Discount)
+    const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
         const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
-        return sum + baseRevenue + (Number(client.maintenanceCharge) || 0);
+        const extra = Number(client.extraCharge) || 0;
+        const maintenance = Number(client.maintenanceCharge) || 0;
+        return sum + baseRevenue + extra + maintenance;
     }, 0);
     
+    // 2. Calculate Pending Payments
     const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         const paid = calculatePaidAmount(client);
         return sum + Math.max(0, expected - paid);
     }, 0);
 
-    const formattedProfit = '₹' + totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    const formattedGross = '₹' + totalGrossRevenue.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     const formattedPending = '₹' + totalPendingPayments.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     
     const profitEl = document.getElementById('stat-total-profit');
-    profitEl.innerText = formattedProfit;
-    profitEl.title = formattedProfit; 
+    if(profitEl) {
+        profitEl.innerText = formattedGross;
+        profitEl.title = formattedGross; 
+    }
     
     const pendingEl = document.getElementById('stat-pending-payments');
-    pendingEl.innerText = formattedPending;
-    pendingEl.title = formattedPending;
+    if(pendingEl) {
+        pendingEl.innerText = formattedPending;
+        pendingEl.title = formattedPending;
+    }
 
-    // Advanced True Net Profit Calculation for Super Admin
-    const totalExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
-    const totalExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
+    // 3. Advanced True Net Profit Calculation
+    const totalAutoExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
+    const totalManualExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
     
-    // True Net Profit = (Gross Base + Maint) + (Gross Extra) - (Total Operational Expenses)
-    const trueNetProfit = (totalProfit + totalExtraCharges) - totalExpenses;
+    const totalCombinedExpenses = totalManualExpenses + totalAutoExtraCharges;
+    const trueNetProfit = totalGrossRevenue - totalCombinedExpenses;
 
     const expEl = document.getElementById('stat-total-expenses');
-    if(expEl) expEl.innerText = '₹' + totalExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    if(expEl) expEl.innerText = '₹' + totalCombinedExpenses.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     
     const netEl = document.getElementById('stat-net-profit');
     if(netEl) netEl.innerText = '₹' + trueNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
@@ -1699,7 +1714,7 @@ window.approveReq = async function(reqId) {
         await updateDoc(reqRef, { status: 'Approved' });
 
         if (req.requestedByEmail !== currentUser.email) {
-            const notifRef = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', crypto.randomUUID());
+            const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
             await setDoc(notifRef, {
                 recipientEmail: req.requestedByEmail,
                 message: `Your request to ${req.type} client "${req.clientData.name}" was approved!`,
@@ -1723,7 +1738,7 @@ window.rejectReq = async function(reqId) {
         await updateDoc(reqRef, { status: 'Rejected' });
 
         if (req.requestedByEmail !== currentUser.email) {
-            const notifRef = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', crypto.randomUUID());
+            const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
             await setDoc(notifRef, {
                 recipientEmail: req.requestedByEmail,
                 message: `Your request to ${req.type} client "${req.clientData.name}" was rejected.`,
@@ -1790,7 +1805,7 @@ window.markNotificationRead = async function(id, isRead) {
         const ref = doc(db, 'artifacts', appId, 'public', 'data', 'notifications', id);
         await updateDoc(ref, { 
             readBy: arrayUnion(currentUser.email),
-            read: true
+            read: true 
         });
     } catch(e) {
         console.error(e);
