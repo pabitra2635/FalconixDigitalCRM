@@ -143,12 +143,21 @@ googleLoginBtn.addEventListener('click', async () => {
     loginError.classList.add('hidden');
     googleLoginBtn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i> Authenticating...';
     try {
-        await signInWithPopup(auth, googleProvider);
+        const result = await signInWithPopup(auth, googleProvider);
+        const user = result.user;
+        const isAdmin = await checkIfAdmin(user.email);
+        if (!isAdmin) {
+            await signOut(auth);
+            loginError.innerText = "Access Denied: Email not authorized as Admin.";
+            loginError.classList.remove('hidden');
+        }
     } catch (error) {
-        console.error("Firebase Auth Error:", error);
-        loginError.innerText = "Error: " + error.message;
+        loginError.innerText = "Login process was cancelled or failed.";
         loginError.classList.remove('hidden');
-        googleLoginBtn.innerHTML = defaultBtnHtml;
+    } finally {
+        if (!currentUser) {
+            googleLoginBtn.innerHTML = defaultBtnHtml;
+        }
     }
 });
 
@@ -201,9 +210,6 @@ function startContinuousTypewriter(name) {
     const phrases = getTimeBasedGreetings(name);
     const el = document.getElementById('greeting-text');
     const emojiEl = document.getElementById('greeting-emoji');
-    
-    if (!el) return; // Prevents crash if greeting text is missing
-    
     let phraseIndex = 0;
     let charIndex = 0;
     let isDeleting = false;
@@ -221,12 +227,12 @@ function startContinuousTypewriter(name) {
         if (isDeleting) {
             el.innerText = fullText.substring(0, charIndex - 1);
             charIndex--;
-            if(emojiEl) emojiEl.innerText = ''; 
+            emojiEl.innerText = ''; 
         } else {
             el.innerText = fullText.substring(0, charIndex + 1);
             charIndex++;
             if (charIndex === fullText.length) {
-                if(emojiEl) emojiEl.innerText = '\u00A0' + currentPhrase.emoji;
+                emojiEl.innerText = '\u00A0' + currentPhrase.emoji;
             }
         }
         let typingSpeed = isDeleting ? 30 : 70;
@@ -249,71 +255,50 @@ function startContinuousTypewriter(name) {
 
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        try {
-            const isAdmin = await checkIfAdmin(user.email);
-            if (isAdmin) {
-                currentUser = user;
-                isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
-                
-                // Bulletproof null check
-                if (loggedInEmailText) {
-                    loggedInEmailText.innerText = user.email;
-                }
-                
-                const navRequests = document.getElementById('nav-requests');
-                if (navRequests) {
-                    navRequests.classList.remove('hidden');
-                    navRequests.classList.add('flex');
-                }
+        const isAdmin = await checkIfAdmin(user.email);
+        if (isAdmin) {
+            currentUser = user;
+            isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
+            loggedInEmailText.innerText = user.email;
+            
+            document.getElementById('nav-requests').classList.remove('hidden');
+            document.getElementById('nav-requests').classList.add('flex');
 
-                const expCard = document.getElementById('stat-card-expenses');
-                if (expCard) {
-                    expCard.classList.remove('hidden');
-                    expCard.classList.add('flex');
-                }
-                
-                const netCard = document.getElementById('stat-card-net-profit');
-                if (netCard) {
-                    netCard.classList.remove('hidden');
-                    netCard.classList.add('flex');
-                }
-
-                if (isSuperAdminUser) {
-                    const navExp = document.getElementById('nav-expenses');
-                    if (navExp) {
-                        navExp.classList.remove('hidden');
-                        navExp.classList.add('flex');
-                    }
-                }
-
-                if (loginWrapper) loginWrapper.classList.add('opacity-0', 'pointer-events-none');
-                setTimeout(() => {
-                    if (loginWrapper) loginWrapper.classList.add('hidden');
-                    if (appWrapper) {
-                        appWrapper.classList.remove('hidden');
-                        appWrapper.classList.add('flex');
-                    }
-                    const defaultName = user.email.split('@')[0];
-                    const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
-                    startContinuousTypewriter(adminName);
-                }, 500);
-                setupDatabaseListener();
-            } else {
-                await signOut(auth);
-                if (loginError) {
-                    loginError.innerText = "Access Denied: Email not authorized as Admin.";
-                    loginError.classList.remove('hidden');
-                }
-                googleLoginBtn.innerHTML = defaultBtnHtml;
+            const expCard = document.getElementById('stat-card-expenses');
+            if (expCard) {
+                expCard.classList.remove('hidden');
+                expCard.classList.add('flex');
             }
-        } catch (err) {
-            console.error("System Sync Error:", err);
-            if (loginError) {
-                loginError.innerText = "System Error: " + err.message;
-                loginError.classList.remove('hidden');
+            
+            const netCard = document.getElementById('stat-card-net-profit');
+            if (netCard) {
+                netCard.classList.remove('hidden');
+                netCard.classList.add('flex');
             }
-            googleLoginBtn.innerHTML = defaultBtnHtml;
+
+            if (isSuperAdminUser) {
+                const navExp = document.getElementById('nav-expenses');
+                if (navExp) {
+                    navExp.classList.remove('hidden');
+                    navExp.classList.add('flex');
+                }
+            }
+
+            loginWrapper.classList.add('opacity-0', 'pointer-events-none');
+            setTimeout(() => {
+                loginWrapper.classList.add('hidden');
+                appWrapper.classList.remove('hidden');
+                appWrapper.classList.add('flex');
+                const defaultName = user.email.split('@')[0];
+                const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                startContinuousTypewriter(adminName);
+            }, 500);
+            setupDatabaseListener();
+        } else {
             await signOut(auth);
+            loginError.innerText = "Access Denied: Email not authorized as Admin.";
+            loginError.classList.remove('hidden');
+            googleLoginBtn.innerHTML = defaultBtnHtml;
         }
     } else {
         currentUser = null;
@@ -322,11 +307,9 @@ onAuthStateChanged(auth, async (user) => {
         if(unsubscribeRequests) unsubscribeRequests();
         if(unsubscribeNotifications) unsubscribeNotifications();
         if(unsubscribeExpenses) unsubscribeExpenses();
-        if (appWrapper) {
-            appWrapper.classList.add('hidden');
-            appWrapper.classList.remove('flex');
-        }
-        if (loginWrapper) loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
+        appWrapper.classList.add('hidden');
+        appWrapper.classList.remove('flex');
+        loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
         googleLoginBtn.innerHTML = defaultBtnHtml;
     }
 });
@@ -1592,7 +1575,7 @@ function renderRequestsTable() {
     const emptyState = document.getElementById('requests-empty-state');
     if(!tbody || !emptyState) return;
     
-    const theadTr = tbody.previousElementSibling ? tbody.previousElementSibling.querySelector('tr') : null;
+    const theadTr = tbody.previousElementSibling.querySelector('tr');
     
     const titleEl = document.querySelector('#view-requests h2');
     const descEl = document.querySelector('#view-requests p');
@@ -1605,7 +1588,7 @@ function renderRequestsTable() {
         if(descEl) descEl.innerText = "Review client additions and updates from the team.";
         visibleReqs = requestsList.filter(r => r.status === 'Pending').sort((a,b) => b.createdAt - a.createdAt);
         
-        if(theadTr) theadTr.innerHTML = `
+        theadTr.innerHTML = `
             <th class="p-3 md:p-4 font-medium">Requested By</th>
             <th class="p-3 md:p-4 font-medium">Type</th>
             <th class="p-3 md:p-4 font-medium">Client Name</th>
@@ -1616,7 +1599,7 @@ function renderRequestsTable() {
         if(descEl) descEl.innerText = "Track the status of your submitted clients and updates.";
         visibleReqs = requestsList.filter(r => r.requestedByEmail === currentUser.email).sort((a,b) => b.createdAt - a.createdAt);
         
-        if(theadTr) theadTr.innerHTML = `
+        theadTr.innerHTML = `
             <th class="p-3 md:p-4 font-medium">Date</th>
             <th class="p-3 md:p-4 font-medium">Type</th>
             <th class="p-3 md:p-4 font-medium">Client Name</th>
