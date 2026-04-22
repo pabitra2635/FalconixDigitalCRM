@@ -5,6 +5,10 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falconix Digital CRM - Secure Login</title>
     <link rel="icon" type="image/jpeg" href="https://i.ibb.co/n80NN2gZ/Falconix-Digital-Logo.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+    
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/@phosphor-icons/web"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
@@ -20,9 +24,13 @@
                         lightCard: '#ffffff',
                         accentRed: '#ff1a1a',
                         accentRedHover: '#cc0000',
+                        brandDark: '#0A1F44',
+                        brandOrange: '#FF6B00',
+                        brandGray: '#F8F9FA'
                     },
                     fontFamily: {
                         sans: ['Inter', 'sans-serif'],
+                        poppins: ['Poppins', 'sans-serif'],
                     }
                 }
             }
@@ -83,6 +91,64 @@
             height: 24px;
             -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
+        }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #E5E7EB;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        .a4-container {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            margin: 2rem auto;
+            padding: 15mm 20mm;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .watermark {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.03;
+            pointer-events: none;
+            width: 65%;
+            z-index: 0;
+        }
+
+        .content-layer {
+            position: relative;
+            z-index: 10;
+            display: flex;
+            flex-direction: column;
+            min-height: calc(297mm - 30mm);
+        }
+
+        @media print {
+            @page {
+                size: A4;
+                margin: 0;
+            }
+            body {
+                background-color: white;
+                margin: 0;
+            }
+            .a4-container {
+                margin: 0;
+                box-shadow: none;
+                width: 210mm;
+                height: 297mm;
+                padding: 15mm 20mm;
+            }
+            .no-print {
+                display: none !important;
+            }
         }
     </style>
 </head>
@@ -302,7 +368,6 @@
                             </div>
                         </div>
 
-                        <!-- Leaderboard Section -->
                         <div class="mt-8 md:mt-10">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
                                 <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Team Performance</h3>
@@ -458,6 +523,10 @@
                                         <input type="email" id="form-email" placeholder="client@example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                 </div>
+                                <div class="mt-4 md:mt-5">
+                                    <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Client Address</label>
+                                    <textarea id="form-address" rows="2" placeholder="Full physical address..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
+                                </div>
                             </div>
 
                             <hr class="border-gray-300 dark:border-gray-800">
@@ -481,15 +550,21 @@
                                         <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 md:gap-5">
+                                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                                     <div>
-                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Total Price (₹) *</label>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Project Price (₹) *</label>
                                         <input type="number" id="form-price" required min="0" step="0.01" placeholder="e.g. 20000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
                                     <div>
-                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Advance Paid (₹)</label>
-                                        <input type="number" id="form-advance" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Extra Charges (Domain/Hosting)</label>
+                                        <input type="number" id="form-extra-charge" min="0" step="0.01" placeholder="e.g. 3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
                                     </div>
+                                    <div>
+                                        <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Maintenance Charge (₹)</label>
+                                        <input type="number" id="form-maintenance-charge" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-4 md:mt-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Target Deadline</label>
                                         <input type="date" id="form-deadline" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
@@ -504,6 +579,15 @@
                                         </select>
                                     </div>
                                 </div>
+
+                                <div class="mt-5 border border-gray-300 dark:border-gray-800 rounded-xl p-4 bg-gray-50/50 dark:bg-gray-900/30">
+                                    <div class="flex justify-between items-center mb-3">
+                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100"><i class="ph ph-wallet text-accentRed"></i> Payment Installments</h4>
+                                        <button type="button" onclick="addInstallmentRow()" class="text-xs bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm font-medium text-gray-800 dark:text-gray-200">+ Add Milestone</button>
+                                    </div>
+                                    <div id="installments-container" class="space-y-2"></div>
+                                </div>
+
                             </div>
                             
                             <div>
@@ -614,6 +698,10 @@
                         <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Client Source</p>
                         <p class="font-medium text-indigo-600 dark:text-indigo-500" id="modal-source">-</p>
                     </div>
+                    <div class="col-span-full sm:col-span-2 md:col-span-3">
+                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Address</p>
+                        <p class="font-medium text-gray-900 dark:text-gray-200 whitespace-pre-wrap" id="modal-address">-</p>
+                    </div>
 
                     <hr class="col-span-full border-gray-300 dark:border-gray-800">
 
@@ -627,19 +715,25 @@
                     </div>
                 </div>
 
-                <div class="bg-gray-100 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-300 dark:border-gray-800 flex justify-between items-center mb-6">
+                <div class="bg-gray-100 dark:bg-gray-800/30 p-4 rounded-xl border border-gray-300 dark:border-gray-800 flex justify-between items-center mb-2">
                     <div>
-                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Total Price</p>
+                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Total Expected</p>
                         <p class="font-bold text-lg text-gray-900 dark:text-white" id="modal-price">-</p>
                     </div>
                     <div class="text-center">
-                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Advance Paid</p>
+                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Paid so far</p>
                         <p class="font-bold text-lg text-green-600 dark:text-green-500" id="modal-advance">-</p>
                     </div>
                     <div class="text-right">
                         <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Balance Due</p>
                         <p class="font-bold text-xl text-accentRed" id="modal-balance">-</p>
                     </div>
+                </div>
+                <p id="modal-price-breakdown" class="text-center text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mb-6 font-medium tracking-wide"></p>
+
+                <div class="bg-white dark:bg-darkCard p-3 md:p-4 rounded-xl border border-gray-200 dark:border-gray-800 mb-6 shadow-sm">
+                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-2 font-semibold border-b border-gray-200 dark:border-gray-700 pb-2 flex items-center gap-2"><i class="ph ph-list-numbers"></i> Payment Milestones</p>
+                    <div id="modal-installments-list" class="flex flex-col"></div>
                 </div>
 
                 <div class="bg-gray-50 dark:bg-gray-800/50 p-3 md:p-4 rounded-xl border border-gray-200 dark:border-gray-800">
@@ -657,6 +751,9 @@
             </div>
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
+                <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-blue-900 text-white font-medium transition-colors flex items-center justify-center gap-2">
+                    <i class="ph ph-file-pdf text-xl"></i> Invoice
+                </button>
                 <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2">
                     <i class="ph ph-whatsapp-logo text-xl"></i> WhatsApp
                 </a>
@@ -666,6 +763,131 @@
                 <button id="modal-edit-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent font-medium transition-colors flex items-center justify-center gap-2">
                     <i class="ph ph-pencil-simple text-lg"></i> Edit Details
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="invoice-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex-col items-center p-4 md:p-8 overflow-y-auto font-poppins">
+        <div class="w-full max-w-[210mm] flex justify-between items-center mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shrink-0">
+            <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
+                <i class="ph ph-x-circle text-2xl"></i> Close
+            </button>
+            <button onclick="downloadInvoicePDF()" class="bg-brandOrange hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+                <i class="ph ph-download-simple text-xl"></i> Download PDF
+            </button>
+        </div>
+
+        <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
+            <img src="https://i.ibb.co/n80NN2gZ/Falconix-Digital-Logo.png" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
+            
+            <div class="relative z-10 flex flex-col h-full">
+                <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
+                    <div class="flex items-center gap-4">
+                        <img src="https://i.ibb.co/n80NN2gZ/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-16 h-16 rounded-xl shadow-md border border-gray-100 object-cover">
+                        <div>
+                            <h1 class="text-3xl font-bold text-brandDark tracking-wide m-0">FALCONIX DIGITAL</h1>
+                            <p class="text-brandOrange font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <h2 class="text-4xl font-bold text-gray-200 uppercase tracking-widest mb-2">Invoice</h2>
+                        <div class="flex gap-4 justify-end text-sm">
+                            <div class="text-gray-500 font-medium space-y-1">
+                                <p>Invoice No:</p>
+                                <p>Date:</p>
+                                <p>Due Date:</p>
+                            </div>
+                            <div class="text-brandDark font-semibold space-y-1 text-right">
+                                <p id="inv-no">FD-001</p>
+                                <p id="inv-date">DD/MM/YYYY</p>
+                                <p id="inv-due-date">DD/MM/YYYY</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-2 gap-12 mb-10">
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">From</h3>
+                        <p class="font-bold text-brandDark text-base">Falconix Digital</p>
+                        <p class="text-sm text-gray-600 mt-1 leading-relaxed">Motihari, Bihar, India</p>
+                        <p class="text-sm text-gray-600 leading-relaxed">+91 86370 28337</p>
+                        <p class="text-sm text-brandOrange font-medium leading-relaxed">digitalfalconix@gmail.com</p>
+                        <p class="text-sm text-gray-600 leading-relaxed">falconixdigital.netlify.app</p>
+                    </div>
+                    <div>
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Bill To</h3>
+                        <p id="inv-client-name" class="font-bold text-brandDark text-lg">-</p>
+                        <p id="inv-client-business" class="text-sm font-medium text-gray-700 mt-1">-</p>
+                        <p id="inv-client-address" class="text-sm text-gray-600 mt-1 leading-relaxed whitespace-pre-wrap">-</p>
+                        <p id="inv-client-phone" class="text-sm text-gray-600 mt-1 leading-relaxed">-</p>
+                        <p id="inv-client-email" class="text-sm text-gray-600 leading-relaxed">-</p>
+                    </div>
+                </div>
+
+                <div class="mb-8">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="bg-brandDark text-white">
+                                <th class="py-3 px-4 font-semibold text-sm rounded-tl-lg w-[50%]">Description</th>
+                                <th class="py-3 px-4 font-semibold text-sm text-center w-[15%]">Quantity</th>
+                                <th class="py-3 px-4 font-semibold text-sm text-right w-[15%]">Rate (₹)</th>
+                                <th class="py-3 px-4 font-semibold text-sm text-right rounded-tr-lg w-[20%]">Amount (₹)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="inv-table-body" class="divide-y divide-gray-200">
+                            
+                        </tbody>
+                    </table>
+                </div>
+
+                <div class="flex justify-between items-start gap-8 mb-10">
+                    <div class="flex-1">
+                        <div class="bg-brandGray p-5 rounded-xl border border-gray-200 shadow-sm">
+                            <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-brandOrange text-lg"></i> Payment Method</h3>
+                            <div class="space-y-1.5 text-sm">
+                                <p class="text-gray-600"><span class="font-medium w-24 inline-block">UPI ID:</span> <span class="text-brandDark font-semibold">pabitramondal2635@oksbi</span></p>
+                                <p class="text-gray-600"><span class="font-medium w-24 inline-block">Account Name:</span> <span class="text-brandDark font-semibold">Pabitra Mondal</span></p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="w-64 shrink-0">
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between text-gray-600">
+                                <span class="font-medium">Subtotal:</span>
+                                <span id="inv-subtotal" class="font-semibold text-gray-800">₹0</span>
+                            </div>
+                            <div class="flex justify-between text-gray-600 border-b border-gray-200 pb-3">
+                                <span class="font-medium">Discount:</span>
+                                <span id="inv-discount" class="font-semibold text-gray-800">₹0</span>
+                            </div>
+                            <div class="flex justify-between items-center text-lg">
+                                <span class="font-bold text-brandDark">Total Amount:</span>
+                                <span id="inv-total" class="font-bold text-brandOrange">₹0</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-auto">
+                    <div class="mb-8">
+                        <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 border-b border-gray-200 pb-2">Terms & Notes</h3>
+                        <ul class="text-xs text-gray-500 space-y-1.5 list-disc list-inside">
+                            <li>50% advance payment is required before initiating the project.</li>
+                            <li>The remaining balance must be cleared immediately upon project completion.</li>
+                            <li>Expected project delivery is within <span id="inv-delivery-days" class="font-semibold text-gray-700">___</span> days from the start date.</li>
+                        </ul>
+                    </div>
+
+                    <div class="flex justify-between items-end pt-6 border-t-2 border-brandDark/10">
+                        <p class="text-brandDark font-semibold italic text-sm">"Thank you for your business!"</p>
+                        <div class="text-center">
+                            <div class="w-40 border-b-2 border-brandDark mb-2 h-10"></div>
+                            <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Authorized Signature</p>
+                            <p class="text-xs text-gray-400 mt-1">Falconix Digital</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
