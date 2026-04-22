@@ -1,4 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app-check.js";
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
 import { getFirestore, collection, doc, setDoc, updateDoc, onSnapshot, getDocs, deleteDoc, arrayUnion } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
@@ -28,6 +29,12 @@ const firebaseConfig = {
 };
 
 const app = initializeApp(firebaseConfig);
+
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaEnterpriseProvider('6LeLDsQsAAAAANX0XGWIkpuuVEqK4pZ8ndMKcmU2'),
+  isTokenAutoRefreshEnabled: true 
+});
+
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
@@ -258,16 +265,23 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('nav-requests').classList.add('flex');
 
             const expCard = document.getElementById('stat-card-expenses');
-            expCard.classList.remove('hidden');
-            expCard.classList.add('flex');
+            if (expCard) {
+                expCard.classList.remove('hidden');
+                expCard.classList.add('flex');
+            }
             
             const netCard = document.getElementById('stat-card-net-profit');
-            netCard.classList.remove('hidden');
-            netCard.classList.add('flex');
+            if (netCard) {
+                netCard.classList.remove('hidden');
+                netCard.classList.add('flex');
+            }
 
             if (isSuperAdminUser) {
-                document.getElementById('nav-expenses').classList.remove('hidden');
-                document.getElementById('nav-expenses').classList.add('flex');
+                const navExp = document.getElementById('nav-expenses');
+                if (navExp) {
+                    navExp.classList.remove('hidden');
+                    navExp.classList.add('flex');
+                }
             }
 
             loginWrapper.classList.add('opacity-0', 'pointer-events-none');
@@ -390,6 +404,7 @@ function renderExpenses() {
     const tbody = document.getElementById('expenses-tbody');
     const empty = document.getElementById('expenses-empty');
     const totalDisplay = document.getElementById('exp-total-display');
+    if (!tbody || !empty || !totalDisplay) return;
     
     tbody.innerHTML = '';
     
@@ -567,24 +582,35 @@ window.navigate = function(viewId, isEdit = false) {
         el.classList.remove('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
         el.classList.add('text-gray-700', 'dark:text-gray-400');
     });
-    document.getElementById(`view-${viewId}`).classList.add('active');
+    const viewEl = document.getElementById(`view-${viewId}`);
+    if(viewEl) viewEl.classList.add('active');
+    
     const navBtn = document.getElementById(`nav-${viewId}`);
     if(navBtn) {
         navBtn.classList.remove('text-gray-700', 'dark:text-gray-400');
         navBtn.classList.add('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
     }
     if (window.innerWidth < 768) {
-        document.getElementById('sidebar').classList.add('-translate-x-full');
-        document.getElementById('mobile-overlay').classList.add('hidden');
+        const sidebar = document.getElementById('sidebar');
+        const overlay = document.getElementById('mobile-overlay');
+        if(sidebar) sidebar.classList.add('-translate-x-full');
+        if(overlay) overlay.classList.add('hidden');
     }
     if(viewId === 'add-client' && !isEdit) {
-        document.getElementById('form-title').innerText = "Add New Client";
-        document.getElementById('form-submit-btn').innerHTML = isSuperAdminUser 
-            ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>' 
-            : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
-        document.getElementById('client-id').value = "";
-        document.getElementById('client-form').reset();
-        document.getElementById('installments-container').innerHTML = '';
+        const formTitle = document.getElementById('form-title');
+        const formSubmitBtn = document.getElementById('form-submit-btn');
+        if(formTitle) formTitle.innerText = "Add New Client";
+        if(formSubmitBtn) {
+            formSubmitBtn.innerHTML = isSuperAdminUser 
+                ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>' 
+                : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
+        }
+        const clientIdEl = document.getElementById('client-id');
+        const clientForm = document.getElementById('client-form');
+        const instContainer = document.getElementById('installments-container');
+        if(clientIdEl) clientIdEl.value = "";
+        if(clientForm) clientForm.reset();
+        if(instContainer) instContainer.innerHTML = '';
     }
     if(viewId === 'client-list' || viewId === 'dashboard') {
         renderClientTable(true);
@@ -596,7 +622,8 @@ window.navigate = function(viewId, isEdit = false) {
         renderNotifications();
     }
     if(viewId === 'expenses') {
-        document.getElementById('exp-date').value = new Date().toISOString().split('T')[0];
+        const expDate = document.getElementById('exp-date');
+        if(expDate) expDate.value = new Date().toISOString().split('T')[0];
     }
 };
 
@@ -607,13 +634,13 @@ window.toggleTheme = function() {
     if (html.classList.contains('dark')) {
         html.classList.remove('dark');
         localStorage.setItem('theme', 'light');
-        themeText.innerText = 'Dark Mode';
-        themeIcon.classList.replace('ph-sun', 'ph-moon');
+        if(themeText) themeText.innerText = 'Dark Mode';
+        if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
     } else {
         html.classList.add('dark');
         localStorage.setItem('theme', 'dark');
-        themeText.innerText = 'Light Mode';
-        themeIcon.classList.replace('ph-moon', 'ph-sun');
+        if(themeText) themeText.innerText = 'Light Mode';
+        if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
     }
     setTimeout(() => {
         if(clientsList.length > 0) updateCharts();
@@ -622,11 +649,15 @@ window.toggleTheme = function() {
 
 if (localStorage.getItem('theme') === 'light') {
     document.documentElement.classList.remove('dark');
-    document.getElementById('theme-text').innerText = 'Dark Mode';
-    document.getElementById('theme-icon').classList.replace('ph-sun', 'ph-moon');
+    const themeText = document.getElementById('theme-text');
+    const themeIcon = document.getElementById('theme-icon');
+    if(themeText) themeText.innerText = 'Dark Mode';
+    if(themeIcon) themeIcon.classList.replace('ph-sun', 'ph-moon');
 } else {
-    document.getElementById('theme-icon').classList.replace('ph-moon', 'ph-sun');
-    document.getElementById('theme-text').innerText = 'Light Mode';
+    const themeIcon = document.getElementById('theme-icon');
+    const themeText = document.getElementById('theme-text');
+    if(themeIcon) themeIcon.classList.replace('ph-moon', 'ph-sun');
+    if(themeText) themeText.innerText = 'Light Mode';
 }
 
 window.editClient = function(id) {
@@ -675,9 +706,14 @@ function getStatusBadge(status) {
 }
 
 function updateDashboardStats() {
-    document.getElementById('stat-total-clients').innerText = clientsList.length;
-    document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
-    document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
+    const totalClientsEl = document.getElementById('stat-total-clients');
+    if(totalClientsEl) totalClientsEl.innerText = clientsList.length;
+    
+    const activeEl = document.getElementById('stat-active-projects');
+    if(activeEl) activeEl.innerText = clientsList.filter(c => c.status === 'Active').length;
+    
+    const completedEl = document.getElementById('stat-completed-projects');
+    if(completedEl) completedEl.innerText = clientsList.filter(c => c.status === 'Completed').length;
     
     const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
         const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
@@ -720,77 +756,81 @@ function updateDashboardStats() {
     if(netEl) netEl.innerText = '₹' + trueNetProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
 
     const recentBody = document.getElementById('recent-clients-tbody');
-    recentBody.innerHTML = '';
-    clientsList.slice(0, 5).forEach(client => {
-        const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-800/50 last:border-0";
-        tr.onclick = () => openModal(client.id);
-        
-        const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
-        const paid = calculatePaidAmount(client);
-        const balance = Math.max(0, expected - paid);
+    if(recentBody) {
+        recentBody.innerHTML = '';
+        clientsList.slice(0, 5).forEach(client => {
+            const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
+            const tr = document.createElement('tr');
+            tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+            tr.onclick = () => openModal(client.id);
+            
+            const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+            const paid = calculatePaidAmount(client);
+            const balance = Math.max(0, expected - paid);
 
-        let financeHtml = `<div>
-            <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
-            ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
-        </div>`;
+            let financeHtml = `<div>
+                <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
+                ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+            </div>`;
 
-        let viewBtnHtml = `<button onclick="event.stopPropagation(); openModal('${client.id}')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 transition-colors p-1 md:p-2" title="View Details"><i class="ph ph-eye text-base md:text-lg"></i></button>`;
-        let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentRed dark:hover:text-accentRed transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
-        
-        tr.innerHTML = `
-            <td class="p-3 md:p-4">
-                <p class="font-medium text-gray-900 dark:text-gray-200">${client.name}</p>
-                <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500">${client.phone}</p>
-            </td>
-            <td class="p-3 md:p-4 text-xs md:text-sm text-gray-700 dark:text-gray-300">${client.business || '-'}</td>
-            <td class="p-3 md:p-4">${financeHtml}</td>
-            <td class="p-3 md:p-4">
-                <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
-            </td>
-            <td class="p-3 md:p-4 text-right">
-                <div class="flex items-center justify-end gap-1">
-                    ${viewBtnHtml}
-                    ${editBtnHtml}
-                </div>
-            </td>
-        `;
-        recentBody.appendChild(tr);
-    });
+            let viewBtnHtml = `<button onclick="event.stopPropagation(); openModal('${client.id}')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 transition-colors p-1 md:p-2" title="View Details"><i class="ph ph-eye text-base md:text-lg"></i></button>`;
+            let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentRed dark:hover:text-accentRed transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
+            
+            tr.innerHTML = `
+                <td class="p-3 md:p-4">
+                    <p class="font-medium text-gray-900 dark:text-gray-200">${client.name}</p>
+                    <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500">${client.phone}</p>
+                </td>
+                <td class="p-3 md:p-4 text-xs md:text-sm text-gray-700 dark:text-gray-300">${client.business || '-'}</td>
+                <td class="p-3 md:p-4">${financeHtml}</td>
+                <td class="p-3 md:p-4">
+                    <span class="px-2 py-0.5 md:px-2.5 md:py-1 rounded-full text-[10px] md:text-xs font-medium ${getStatusBadge(client.status)}">${client.status}</span>
+                </td>
+                <td class="p-3 md:p-4 text-right">
+                    <div class="flex items-center justify-end gap-1">
+                        ${viewBtnHtml}
+                        ${editBtnHtml}
+                    </div>
+                </td>
+            `;
+            recentBody.appendChild(tr);
+        });
+    }
 
     const deadlinesContainer = document.getElementById('upcoming-deadlines-list');
-    deadlinesContainer.innerHTML = '';
-    const nowTime = new Date().setHours(0,0,0,0);
-    const upcoming = clientsList.filter(c => (c.status === 'Pending' || c.status === 'Active') && c.deadline).sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5);
-    if(upcoming.length === 0) {
-        deadlinesContainer.innerHTML = '<div class="flex-1 flex flex-col items-center justify-center text-center py-4"><i class="ph ph-check-circle text-3xl text-green-500 mb-2"></i><p class="text-sm text-gray-600 dark:text-gray-400">No active deadlines!<br>You are all caught up.</p></div>';
-    } else {
-        upcoming.forEach(client => {
-            const d = new Date(client.deadline);
-            const diffDays = Math.ceil((d - nowTime) / (1000 * 60 * 60 * 24));
-            let colorClass = 'text-gray-600 dark:text-gray-400';
-            let iconClass = 'text-gray-500 dark:text-gray-400';
-            if(diffDays < 0) { 
-                colorClass = 'text-red-600 dark:text-red-500 font-bold'; 
-                iconClass = 'text-red-600 dark:text-red-500'; 
-            } else if(diffDays <= 3) { 
-                colorClass = 'text-orange-600 dark:text-orange-500 font-bold'; 
-                iconClass = 'text-orange-600 dark:text-orange-500'; 
-            }
-            deadlinesContainer.innerHTML += `
-                <div class="bg-white/60 dark:bg-gray-800/50 p-3 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-300 dark:border-gray-800/50" onclick="openModal('${client.id}')">
-                    <div class="flex justify-between items-start mb-1">
-                        <p class="font-semibold text-sm text-gray-900 dark:text-gray-200 truncate pr-2">${client.name}</p>
-                        <div class="flex items-center gap-1 text-[11px] md:text-xs shrink-0 ${colorClass}">
-                            <i class="ph ph-clock ${iconClass}"></i>
-                            <span>${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</span>
+    if(deadlinesContainer) {
+        deadlinesContainer.innerHTML = '';
+        const nowTime = new Date().setHours(0,0,0,0);
+        const upcoming = clientsList.filter(c => (c.status === 'Pending' || c.status === 'Active') && c.deadline).sort((a,b) => new Date(a.deadline) - new Date(b.deadline)).slice(0, 5);
+        if(upcoming.length === 0) {
+            deadlinesContainer.innerHTML = '<div class="flex-1 flex flex-col items-center justify-center text-center py-4"><i class="ph ph-check-circle text-3xl text-green-500 mb-2"></i><p class="text-sm text-gray-600 dark:text-gray-400">No active deadlines!<br>You are all caught up.</p></div>';
+        } else {
+            upcoming.forEach(client => {
+                const d = new Date(client.deadline);
+                const diffDays = Math.ceil((d - nowTime) / (1000 * 60 * 60 * 24));
+                let colorClass = 'text-gray-600 dark:text-gray-400';
+                let iconClass = 'text-gray-500 dark:text-gray-400';
+                if(diffDays < 0) { 
+                    colorClass = 'text-red-600 dark:text-red-500 font-bold'; 
+                    iconClass = 'text-red-600 dark:text-red-500'; 
+                } else if(diffDays <= 3) { 
+                    colorClass = 'text-orange-600 dark:text-orange-500 font-bold'; 
+                    iconClass = 'text-orange-600 dark:text-orange-500'; 
+                }
+                deadlinesContainer.innerHTML += `
+                    <div class="bg-white/60 dark:bg-gray-800/50 p-3 rounded-xl cursor-pointer hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors border border-gray-300 dark:border-gray-800/50" onclick="openModal('${client.id}')">
+                        <div class="flex justify-between items-start mb-1">
+                            <p class="font-semibold text-sm text-gray-900 dark:text-gray-200 truncate pr-2">${client.name}</p>
+                            <div class="flex items-center gap-1 text-[11px] md:text-xs shrink-0 ${colorClass}">
+                                <i class="ph ph-clock ${iconClass}"></i>
+                                <span>${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</span>
+                            </div>
                         </div>
+                        <p class="text-xs text-gray-600 dark:text-gray-500 truncate">${client.business || 'N/A'}</p>
                     </div>
-                    <p class="text-xs text-gray-600 dark:text-gray-500 truncate">${client.business || 'N/A'}</p>
-                </div>
-            `;
-        });
+                `;
+            });
+        }
     }
 }
 
@@ -901,10 +941,13 @@ function updateCharts() {
 }
 
 function renderLeaderboard() {
-    const filter = document.getElementById('leaderboard-filter').value;
+    const filterEl = document.getElementById('leaderboard-filter');
     const tbody = document.getElementById('leaderboard-tbody');
     const emptyState = document.getElementById('leaderboard-empty');
     const tableContainer = document.getElementById('leaderboard-table-container');
+    if(!filterEl || !tbody || !emptyState || !tableContainer) return;
+    
+    const filter = filterEl.value;
 
     const now = new Date();
     let startDate = new Date(0);
@@ -1000,7 +1043,8 @@ function renderLeaderboard() {
     }
 }
 
-document.getElementById('leaderboard-filter').addEventListener('change', renderLeaderboard);
+const leaderboardFilter = document.getElementById('leaderboard-filter');
+if(leaderboardFilter) leaderboardFilter.addEventListener('change', renderLeaderboard);
 
 window.loadMoreClients = function() {
     currentPage++;
@@ -1012,9 +1056,15 @@ function renderClientTable(resetPage = false) {
     const tbody = document.getElementById('clients-tbody');
     const emptyState = document.getElementById('empty-state');
     const loadMoreBtnContainer = document.getElementById('load-more-container');
-    const searchQ = document.getElementById('search-input').value.toLowerCase();
-    const statusQ = document.getElementById('filter-status').value;
-    const ownerQ = document.getElementById('filter-owner').value;
+    const searchInput = document.getElementById('search-input');
+    const statusFilter = document.getElementById('filter-status');
+    const ownerFilter = document.getElementById('filter-owner');
+    
+    if(!tbody || !emptyState || !loadMoreBtnContainer) return;
+
+    const searchQ = searchInput ? searchInput.value.toLowerCase() : '';
+    const statusQ = statusFilter ? statusFilter.value : 'All';
+    const ownerQ = ownerFilter ? ownerFilter.value : 'All';
 
     const filtered = clientsList.filter(client => {
         const matchSearch = client.name.toLowerCase().includes(searchQ) || client.phone.includes(searchQ);
@@ -1108,12 +1158,18 @@ function renderClientTable(resetPage = false) {
     }
 }
 
-document.getElementById('search-input').addEventListener('input', () => renderClientTable(true));
-document.getElementById('filter-status').addEventListener('change', () => renderClientTable(true));
-document.getElementById('filter-owner').addEventListener('change', () => renderClientTable(true));
+const searchInputEl = document.getElementById('search-input');
+if(searchInputEl) searchInputEl.addEventListener('input', () => renderClientTable(true));
+
+const filterStatusEl = document.getElementById('filter-status');
+if(filterStatusEl) filterStatusEl.addEventListener('change', () => renderClientTable(true));
+
+const filterOwnerEl = document.getElementById('filter-owner');
+if(filterOwnerEl) filterOwnerEl.addEventListener('change', () => renderClientTable(true));
 
 function renderActivityLog(client) {
     const logContainer = document.getElementById('modal-activity-log');
+    if(!logContainer) return;
     const logArray = client.activityLog || [];
     
     if (logArray.length === 0) {
@@ -1240,58 +1296,68 @@ window.openModal = function(id) {
     }
     
     renderActivityLog(client);
-    modal.classList.remove('hidden');
+    if(modal) modal.classList.remove('hidden');
 };
 
 window.closeModal = function() {
-    modal.classList.add('hidden');
+    if(modal) modal.classList.add('hidden');
 };
 
-modal.addEventListener('click', (e) => {
-    if (e.target === modal) closeModal();
-});
+if(modal) {
+    modal.addEventListener('click', (e) => {
+        if (e.target === modal) closeModal();
+    });
+}
 
 const logoutModal = document.getElementById('logout-modal');
-logoutModal.addEventListener('click', (e) => {
-    if (e.target === logoutModal) hideLogoutModal();
-});
+if(logoutModal) {
+    logoutModal.addEventListener('click', (e) => {
+        if (e.target === logoutModal) hideLogoutModal();
+    });
+}
 
 let clientToDelete = null;
 
 window.showDeleteModal = function(id) {
     clientToDelete = id;
-    document.getElementById('delete-confirm-modal').classList.remove('hidden');
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    if(deleteModal) deleteModal.classList.remove('hidden');
 };
 
 window.hideDeleteModal = function() {
     clientToDelete = null;
-    document.getElementById('delete-confirm-modal').classList.add('hidden');
+    const deleteModal = document.getElementById('delete-confirm-modal');
+    if(deleteModal) deleteModal.classList.add('hidden');
 };
 
-document.getElementById('confirm-delete-btn').addEventListener('click', async () => {
-    if (!clientToDelete || !isSuperAdminUser) return;
-    
-    const btn = document.getElementById('confirm-delete-btn');
-    const originalHtml = btn.innerHTML;
-    btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
-    btn.disabled = true;
-    
-    try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToDelete);
-        await deleteDoc(docRef);
-        showToast("Client deleted successfully.", "success");
-        hideDeleteModal();
-        closeModal();
-    } catch (error) {
-        showToast("Failed to delete client.", "error");
-    } finally {
-        btn.innerHTML = originalHtml;
-        btn.disabled = false;
-    }
-});
+const confirmDeleteBtn = document.getElementById('confirm-delete-btn');
+if(confirmDeleteBtn) {
+    confirmDeleteBtn.addEventListener('click', async () => {
+        if (!clientToDelete || !isSuperAdminUser) return;
+        
+        const btn = document.getElementById('confirm-delete-btn');
+        const originalHtml = btn.innerHTML;
+        btn.innerHTML = '<i class="ph ph-spinner animate-spin text-lg"></i>';
+        btn.disabled = true;
+        
+        try {
+            const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientToDelete);
+            await deleteDoc(docRef);
+            showToast("Client deleted successfully.", "success");
+            hideDeleteModal();
+            closeModal();
+        } catch (error) {
+            showToast("Failed to delete client.", "error");
+        } finally {
+            btn.innerHTML = originalHtml;
+            btn.disabled = false;
+        }
+    });
+}
 
 function showToast(message, type = 'info') {
     const container = document.getElementById('toast-container');
+    if(!container) return;
     const toast = document.createElement('div');
     let bgClass = 'bg-gray-800 dark:bg-gray-100 text-white dark:text-gray-900';
     let icon = 'ph-info';
@@ -1507,6 +1573,8 @@ function updateRequestsBadge() {
 function renderRequestsTable() {
     const tbody = document.getElementById('requests-tbody');
     const emptyState = document.getElementById('requests-empty-state');
+    if(!tbody || !emptyState) return;
+    
     const theadTr = tbody.previousElementSibling.querySelector('tr');
     
     const titleEl = document.querySelector('#view-requests h2');
@@ -1516,8 +1584,8 @@ function renderRequestsTable() {
     
     let visibleReqs = [];
     if (isSuperAdminUser) {
-        titleEl.innerText = "Pending Requests";
-        descEl.innerText = "Review client additions and updates from the team.";
+        if(titleEl) titleEl.innerText = "Pending Requests";
+        if(descEl) descEl.innerText = "Review client additions and updates from the team.";
         visibleReqs = requestsList.filter(r => r.status === 'Pending').sort((a,b) => b.createdAt - a.createdAt);
         
         theadTr.innerHTML = `
@@ -1527,8 +1595,8 @@ function renderRequestsTable() {
             <th class="p-3 md:p-4 font-medium text-right">Actions</th>
         `;
     } else {
-        titleEl.innerText = "My Requests";
-        descEl.innerText = "Track the status of your submitted clients and updates.";
+        if(titleEl) titleEl.innerText = "My Requests";
+        if(descEl) descEl.innerText = "Track the status of your submitted clients and updates.";
         visibleReqs = requestsList.filter(r => r.requestedByEmail === currentUser.email).sort((a,b) => b.createdAt - a.createdAt);
         
         theadTr.innerHTML = `
@@ -1545,11 +1613,15 @@ function renderRequestsTable() {
         emptyState.classList.add('flex');
         
         if (isSuperAdminUser) {
-            emptyState.querySelector('h3').innerText = "All caught up!";
-            emptyState.querySelector('p').innerText = "There are no pending requests to review.";
+            const h3 = emptyState.querySelector('h3');
+            const p = emptyState.querySelector('p');
+            if(h3) h3.innerText = "All caught up!";
+            if(p) p.innerText = "There are no pending requests to review.";
         } else {
-            emptyState.querySelector('h3').innerText = "No requests";
-            emptyState.querySelector('p').innerText = "You haven't submitted any requests yet.";
+            const h3 = emptyState.querySelector('h3');
+            const p = emptyState.querySelector('p');
+            if(h3) h3.innerText = "No requests";
+            if(p) p.innerText = "You haven't submitted any requests yet.";
         }
     } else {
         tbody.parentElement.classList.remove('hidden');
@@ -1694,13 +1766,17 @@ window.viewRequestDetails = function(reqId) {
     }
     
     const cleanPhone = client.phone.replace(/[^0-9]/g, '');
-    document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
+    const whatsappEl = document.getElementById('modal-whatsapp');
+    if(whatsappEl) whatsappEl.href = `https://wa.me/${cleanPhone}`;
     
-    document.getElementById('modal-edit-btn').classList.add('hidden');
-    document.getElementById('modal-delete-btn').classList.add('hidden');
+    const editBtn = document.getElementById('modal-edit-btn');
+    if(editBtn) editBtn.classList.add('hidden');
+    
+    const deleteBtn = document.getElementById('modal-delete-btn');
+    if(deleteBtn) deleteBtn.classList.add('hidden');
     
     renderActivityLog(client);
-    modal.classList.remove('hidden');
+    if(modal) modal.classList.remove('hidden');
 };
 
 window.approveReq = async function(reqId) {
@@ -1772,7 +1848,7 @@ function renderNotifications() {
 
     const listEl = document.getElementById('notifications-list');
     const emptyEl = document.getElementById('notifications-empty-state');
-    if (!listEl) return;
+    if (!listEl || !emptyEl) return;
 
     listEl.innerHTML = '';
     if (myNotifs.length === 0) {
@@ -1832,5 +1908,3 @@ window.markAllNotificationsRead = async function() {
         console.error(e);
     }
 }
-
-updateRequestsBadge()
