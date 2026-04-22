@@ -6,15 +6,13 @@ const SUPER_ADMIN_EMAIL = 'pabitramondal2635@gmail.com';
 
 const SUPER_ADMINS = [
     'pabitramondal2635@gmail.com',
-    'sujata232005@gmail.com',
     'subhadeep0897@gmail.com',
     'pabitramondal.ind@gmail.com'
 ];
 
 const ADMIN_NAMES = {
-    'pabitramondal2635@gmail.com': 'Pabitra',
-    'sujata232005@gmail.com': 'Sujata',
-    'subhadeep0897@gmail.com': 'Subhadeep',
+    'pabitramondal2635@gmail.com': 'Pabitra Mondal',
+    'subhadeep0897@gmail.com': 'Subhadeep Tapadar',
     'pabitramondal.ind@gmail.com': 'Pabitra (Ind)'
 };
 
@@ -58,6 +56,52 @@ const googleLoginBtn = document.getElementById('google-login-btn');
 const loginError = document.getElementById('login-error');
 
 const defaultBtnHtml = googleLoginBtn.innerHTML;
+
+window.addInstallmentRow = function(title = '', amount = '', date = '', status = 'Pending') {
+    const container = document.getElementById('installments-container');
+    const row = document.createElement('div');
+    row.className = 'flex flex-col md:flex-row gap-2 items-center installment-row';
+    row.innerHTML = `
+        <div class="w-full md:w-2/5">
+            <input type="text" placeholder="Milestone (e.g. 50% Upfront)" value="${title}" class="inst-title w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+        </div>
+        <div class="w-full md:w-1/4">
+            <input type="number" placeholder="Amt (₹)" value="${amount}" class="inst-amount w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+        </div>
+        <div class="w-full md:w-1/4 flex gap-2">
+            <input type="date" value="${date}" class="inst-date w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+        </div>
+        <div class="w-full md:w-auto flex items-center gap-2 shrink-0">
+            <select class="inst-status bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
+                <option value="Paid" ${status === 'Paid' ? 'selected' : ''}>Paid</option>
+            </select>
+            <button type="button" onclick="this.parentElement.parentElement.remove()" class="p-1.5 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-lg transition-colors"><i class="ph ph-trash text-lg"></i></button>
+        </div>
+    `;
+    container.appendChild(row);
+}
+
+function getInstallmentsData() {
+    const rows = document.querySelectorAll('.installment-row');
+    const data = [];
+    rows.forEach(row => {
+        data.push({
+            title: row.querySelector('.inst-title').value.trim(),
+            amount: parseFloat(row.querySelector('.inst-amount').value) || 0,
+            date: row.querySelector('.inst-date').value,
+            status: row.querySelector('.inst-status').value
+        });
+    });
+    return data;
+}
+
+function calculatePaidAmount(client) {
+    if (client.installments && client.installments.length > 0) {
+        return client.installments.filter(i => i.status === 'Paid').reduce((sum, i) => sum + (Number(i.amount) || 0), 0);
+    }
+    return Number(client.advance) || 0;
+}
 
 async function checkIfAdmin(email) {
     const lowerEmail = email.toLowerCase();
@@ -289,7 +333,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     const addedEmail = isEditing ? (existingClient?.addedByEmail || currentUser.email) : currentUser.email;
     const addedName = isEditing ? (existingClient?.addedByName || ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]) : (ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]);
 
-    // Activity Log generation
     let logAction = "Client details updated";
     const statusField = document.getElementById('form-status').value;
     if (isEditing && existingClient && existingClient.status !== statusField) {
@@ -317,10 +360,13 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         source: document.getElementById('form-source').value,
         phone: document.getElementById('form-phone').value.trim(),
         email: document.getElementById('form-email').value.trim(),
+        address: document.getElementById('form-address').value.trim(),
         website: document.getElementById('form-website').value,
         websiteUrl: document.getElementById('form-website-url').value.trim(),
         price: parseFloat(document.getElementById('form-price').value) || 0,
-        advance: parseFloat(document.getElementById('form-advance').value) || 0,
+        extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
+        maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
+        installments: getInstallmentsData(),
         deadline: document.getElementById('form-deadline').value || null,
         status: statusField,
         notes: document.getElementById('form-notes').value.trim(),
@@ -352,6 +398,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         }
         document.getElementById('client-form').reset();
         document.getElementById('client-id').value = "";
+        document.getElementById('installments-container').innerHTML = '';
         document.getElementById('form-title').innerText = "Add New Client";
         navigate('client-list');
     } catch (error) {
@@ -400,6 +447,8 @@ window.navigate = function(viewId, isEdit = false) {
             : '<i class="ph ph-paper-plane-right text-lg"></i> <span>Send Request</span>';
         document.getElementById('client-id').value = "";
         document.getElementById('client-form').reset();
+        document.getElementById('installments-container').innerHTML = '';
+        addInstallmentRow(); 
     }
     if(viewId === 'client-list' || viewId === 'dashboard') {
         renderClientTable(true);
@@ -452,13 +501,25 @@ window.editClient = function(id) {
     document.getElementById('form-source').value = client.source || 'Referral';
     document.getElementById('form-phone').value = client.phone;
     document.getElementById('form-email').value = client.email;
+    document.getElementById('form-address').value = client.address || '';
     document.getElementById('form-website').value = client.website;
     document.getElementById('form-website-url').value = client.websiteUrl || '';
     document.getElementById('form-price').value = client.price || '';
-    document.getElementById('form-advance').value = client.advance || '';
+    document.getElementById('form-extra-charge').value = client.extraCharge || '';
+    document.getElementById('form-maintenance-charge').value = client.maintenanceCharge || '';
     document.getElementById('form-deadline').value = client.deadline || '';
     document.getElementById('form-status').value = client.status;
     document.getElementById('form-notes').value = client.notes;
+
+    document.getElementById('installments-container').innerHTML = '';
+    if (client.installments && client.installments.length > 0) {
+        client.installments.forEach(inst => addInstallmentRow(inst.title, inst.amount, inst.date, inst.status));
+    } else if (client.advance > 0) {
+        addInstallmentRow('Advance', client.advance, '', 'Paid');
+    } else {
+        addInstallmentRow(); 
+    }
+
     document.getElementById('form-title').innerText = "Edit Client Details";
     document.getElementById('form-submit-btn').innerHTML = isSuperAdminUser 
         ? '<i class="ph ph-floppy-disk text-lg"></i> <span>Update Client</span>'
@@ -479,16 +540,28 @@ function updateDashboardStats() {
     document.getElementById('stat-total-clients').innerText = clientsList.length;
     document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
     document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
-    const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.price) || 0), 0);
-    const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => sum + Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0)), 0);
+    
+    // Overall Profit: Project Price + Maintenance (excluding Extra Charges/Hosting)
+    const totalProfit = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.price) || 0) + (Number(client.maintenanceCharge) || 0), 0);
+    
+    // Pending Payments includes the extra charges since the client still owes them
+    const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
+        const expected = (Number(client.price) || 0) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+        const paid = calculatePaidAmount(client);
+        return sum + Math.max(0, expected - paid);
+    }, 0);
+
     const formattedProfit = '₹' + totalProfit.toLocaleString('en-IN', { maximumFractionDigits: 0 });
     const formattedPending = '₹' + totalPendingPayments.toLocaleString('en-IN', { maximumFractionDigits: 0 });
+    
     const profitEl = document.getElementById('stat-total-profit');
     profitEl.innerText = formattedProfit;
     profitEl.title = formattedProfit; 
+    
     const pendingEl = document.getElementById('stat-pending-payments');
     pendingEl.innerText = formattedPending;
     pendingEl.title = formattedPending;
+
     const recentBody = document.getElementById('recent-clients-tbody');
     recentBody.innerHTML = '';
     clientsList.slice(0, 5).forEach(client => {
@@ -496,12 +569,16 @@ function updateDashboardStats() {
         const tr = document.createElement('tr');
         tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors cursor-pointer border-b border-gray-200 dark:border-gray-800/50 last:border-0";
         tr.onclick = () => openModal(client.id);
-        const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
+        
+        const expected = (Number(client.price) || 0) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+        const paid = calculatePaidAmount(client);
+        const balance = Math.max(0, expected - paid);
+
         let financeHtml = `<div>
-            <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
+            <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
             ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
         </div>`;
-        
+
         let viewBtnHtml = `<button onclick="event.stopPropagation(); openModal('${client.id}')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 transition-colors p-1 md:p-2" title="View Details"><i class="ph ph-eye text-base md:text-lg"></i></button>`;
         let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentRed dark:hover:text-accentRed transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
         
@@ -524,6 +601,7 @@ function updateDashboardStats() {
         `;
         recentBody.appendChild(tr);
     });
+
     const deadlinesContainer = document.getElementById('upcoming-deadlines-list');
     deadlinesContainer.innerHTML = '';
     const nowTime = new Date().setHours(0,0,0,0);
@@ -586,7 +664,7 @@ function updateCharts() {
             const y = d.getFullYear();
             const monthObj = last6Months.find(lm => lm.month === m && lm.year === y);
             if (monthObj) {
-                monthObj.revenue += (Number(client.price) || 0);
+                monthObj.revenue += (Number(client.price) || 0) + (Number(client.maintenanceCharge) || 0);
             }
         }
     });
@@ -689,7 +767,6 @@ function renderLeaderboard() {
     clientsList.forEach(client => {
         const createdAt = new Date(client.createdAt);
         if (createdAt >= startDate && createdAt < endDate) {
-            // Default to Super Admin (Pabitra) if no owner is found
             const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
             const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra';
 
@@ -698,15 +775,31 @@ function renderLeaderboard() {
             }
 
             statsMap[email].clientsCount++;
+            
             if (client.status === 'Completed') {
                 statsMap[email].revenue += (Number(client.price) || 0);
+                
+                const maintenance = Number(client.maintenanceCharge) || 0;
+                if (maintenance > 0) {
+                    if (!statsMap[SUPER_ADMIN_EMAIL]) {
+                        statsMap[SUPER_ADMIN_EMAIL] = { 
+                            name: ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra', 
+                            clientsCount: 0, 
+                            revenue: 0, 
+                            email: SUPER_ADMIN_EMAIL 
+                        };
+                    }
+                    if (email !== SUPER_ADMIN_EMAIL) {
+                       statsMap[SUPER_ADMIN_EMAIL].revenue += maintenance;
+                    } else {
+                       statsMap[email].revenue += maintenance; 
+                    }
+                }
             }
         }
     });
 
     const statsArray = Object.values(statsMap);
-    
-    // Sort primarily by revenue (highest first), then by total clients added
     statsArray.sort((a, b) => b.revenue - a.revenue || b.clientsCount - a.clientsCount);
 
     tbody.innerHTML = '';
@@ -787,9 +880,13 @@ function renderClientTable(resetPage = false) {
             const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
             const tr = document.createElement('tr');
             tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
-            const balance = Math.max(0, (Number(client.price) || 0) - (Number(client.advance) || 0));
+            
+            const expected = (Number(client.price) || 0) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
+            const paid = calculatePaidAmount(client);
+            const balance = Math.max(0, expected - paid);
+
             let financeHtml = `<div>
-                <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${(client.price || 0).toLocaleString('en-IN')}</p>
+                <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
                 ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
             </div>`;
             const d = new Date(client.deadline);
@@ -803,7 +900,6 @@ function renderClientTable(resetPage = false) {
                 }
                 deadlineHtml = `<p class="text-xs md:text-sm ${colorClass}"><i class="ph ph-clock"></i> ${d.toLocaleDateString('en-IN', {day:'numeric', month:'short'})}</p>`;
             }
-            
             let actionsHtml = `
                 <div class="flex items-center justify-end gap-2">
                     <button onclick="event.stopPropagation(); openModal('${client.id}')" class="w-7 h-7 md:w-8 md:h-8 rounded-lg bg-blue-100 text-blue-600 flex items-center justify-center hover:bg-blue-200 transition-colors" title="View Details">
@@ -817,7 +913,6 @@ function renderClientTable(resetPage = false) {
                     </button>` : ''}
                 </div>
             `;
-            
             tr.innerHTML = `
                 <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
                     <div class="flex items-center gap-2 md:gap-3">
@@ -881,12 +976,15 @@ const modal = document.getElementById('client-modal');
 window.openModal = function(id) {
     const client = clientsList.find(c => c.id === id);
     if(!client) return;
+    
     document.getElementById('modal-name').innerText = client.name;
     document.getElementById('modal-business').innerText = client.business || 'N/A';
     document.getElementById('modal-phone').innerText = client.phone;
     document.getElementById('modal-email').innerText = client.email || 'N/A';
+    document.getElementById('modal-address').innerText = client.address || 'N/A';
     document.getElementById('modal-website').innerText = client.website;
     document.getElementById('modal-source').innerText = client.source || 'N/A';
+    
     const urlEl = document.getElementById('modal-website-url');
     if (client.websiteUrl) {
         urlEl.innerText = client.websiteUrl;
@@ -899,24 +997,53 @@ window.openModal = function(id) {
         urlEl.classList.remove('text-blue-600', 'dark:text-blue-500', 'hover:text-blue-700', 'underline');
         urlEl.classList.add('text-gray-900', 'dark:text-gray-200');
     }
-    const isCompleted = client.status === 'Completed';
-    const displayAdvance = isCompleted ? (client.price || 0) : (client.advance || 0);
-    const balance = Math.max(0, (Number(client.price) || 0) - Number(displayAdvance));
-    document.getElementById('modal-price').innerText = `₹${(client.price || 0).toLocaleString('en-IN')}`;
-    document.getElementById('modal-advance').innerText = `₹${displayAdvance.toLocaleString('en-IN')}`;
+    
+    const extraCharge = Number(client.extraCharge) || 0;
+    const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+    const paidAmount = calculatePaidAmount(client);
+    const totalExpected = (Number(client.price) || 0) + extraCharge + maintenanceCharge;
+    const balance = Math.max(0, totalExpected - paidAmount);
+
+    document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
+    document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
+    
+    document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
+
     const balanceEl = document.getElementById('modal-balance');
-    if (isCompleted || balance <= 0) {
+    if (client.status === 'Completed' || balance <= 0) {
         balanceEl.innerText = 'Fully Paid';
         balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
     } else {
         balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
         balanceEl.className = 'font-bold text-xl text-accentRed';
     }
+
+    let instHtml = '';
+    if (client.installments && client.installments.length > 0) {
+        instHtml = client.installments.map(i => `
+            <div class="flex justify-between items-center py-2.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${i.title || 'Installment'}</p>
+                    <p class="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><i class="ph ph-calendar-blank"></i> ${i.date ? new Date(i.date).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'}) : 'No due date'}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">₹${Number(i.amount).toLocaleString('en-IN')}</p>
+                    <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${i.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${i.status}</span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded for this client.</p>';
+    }
+    document.getElementById('modal-installments-list').innerHTML = instHtml;
+
     document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
     document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
+    
     const statusEl = document.getElementById('modal-status');
     statusEl.innerText = client.status;
     statusEl.className = `inline-block mt-1 px-3 py-1 rounded-full text-xs font-medium ${getStatusBadge(client.status)}`;
+    
     const addedByEl = document.getElementById('modal-added-by');
     if (client.addedByName || client.addedByEmail) {
         addedByEl.innerText = `Added by: ${client.addedByName || client.addedByEmail}`;
@@ -924,8 +1051,14 @@ window.openModal = function(id) {
     } else {
         addedByEl.classList.add('hidden');
     }
+    
     const cleanPhone = client.phone.replace(/[^0-9]/g, '');
     document.getElementById('modal-whatsapp').href = `https://wa.me/${cleanPhone}`;
+    
+    const invoiceBtn = document.getElementById('modal-invoice-btn');
+    if (invoiceBtn) {
+        invoiceBtn.onclick = () => openInvoiceModal(id);
+    }
     
     const canEdit = isSuperAdminUser || client.addedByEmail === currentUser.email;
     const editBtn = document.getElementById('modal-edit-btn');
@@ -1017,6 +1150,97 @@ function showToast(message, type = 'info') {
         setTimeout(() => toast.remove(), 300);
     }, 3000);
 }
+
+// --- INVOICE GENERATOR LOGIC ---
+
+window.openInvoiceModal = function(clientId) {
+    const client = clientsList.find(c => c.id === clientId);
+    if (!client) return;
+
+    const invoiceNo = `FD-${client.createdAt.toString().slice(-6)}`;
+    document.getElementById('inv-no').innerText = invoiceNo;
+    document.getElementById('inv-date').innerText = new Date().toLocaleDateString('en-IN');
+    document.getElementById('inv-due-date').innerText = client.deadline ? new Date(client.deadline).toLocaleDateString('en-IN') : 'Upon Completion';
+
+    document.getElementById('inv-client-name').innerText = client.name;
+    document.getElementById('inv-client-business').innerText = client.business || 'N/A';
+    document.getElementById('inv-client-address').innerText = client.address || 'Address not provided';
+    document.getElementById('inv-client-phone').innerText = client.phone;
+    document.getElementById('inv-client-email').innerText = client.email || 'N/A';
+
+    const deliveryDaysEl = document.getElementById('inv-delivery-days');
+    if (client.deadline) {
+        const diffTime = Math.abs(new Date(client.deadline) - new Date().setHours(0,0,0,0));
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        deliveryDaysEl.innerText = diffDays > 0 ? diffDays : 'ASAP';
+    } else {
+        deliveryDaysEl.innerText = '7 - 14';
+    }
+
+    const tbody = document.getElementById('inv-table-body');
+    tbody.innerHTML = '';
+    let subtotal = 0;
+
+    const addRow = (desc, amount) => {
+        if (amount > 0) {
+            subtotal += amount;
+            const tr = document.createElement('tr');
+            tr.className = 'hover:bg-gray-50';
+            tr.innerHTML = `
+                <td class="py-3 px-4 text-sm text-gray-800 border-b border-gray-100 font-medium">${desc}</td>
+                <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-center">1</td>
+                <td class="py-3 px-4 text-sm text-gray-600 border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+                <td class="py-3 px-4 text-sm text-brandDark font-semibold border-b border-gray-100 text-right">₹${amount.toLocaleString('en-IN')}</td>
+            `;
+            tbody.appendChild(tr);
+        }
+    };
+
+    addRow(client.website || 'Website Design & Development', Number(client.price) || 0);
+    addRow('Hosting, Domain & Server Setup', Number(client.extraCharge) || 0);
+    addRow('Annual Maintenance & Support', Number(client.maintenanceCharge) || 0);
+
+    document.getElementById('inv-subtotal').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+    document.getElementById('inv-discount').innerText = `₹0`;
+    document.getElementById('inv-total').innerText = `₹${subtotal.toLocaleString('en-IN')}`;
+
+    window.currentInvoiceFilename = `Invoice_${invoiceNo}_${client.name.replace(/\s+/g, '_')}.pdf`;
+
+    document.getElementById('invoice-modal').classList.remove('hidden');
+    document.getElementById('invoice-modal').classList.add('flex');
+};
+
+window.closeInvoiceModal = function() {
+    document.getElementById('invoice-modal').classList.add('hidden');
+    document.getElementById('invoice-modal').classList.remove('flex');
+};
+
+window.downloadInvoicePDF = function() {
+    const element = document.getElementById('invoice-content');
+    const btn = document.querySelector('#invoice-modal button:last-child');
+    
+    const opt = {
+        margin:       0,
+        filename:     window.currentInvoiceFilename || 'Falconix_Invoice.pdf',
+        image:        { type: 'jpeg', quality: 0.98 },
+        html2canvas:  { scale: 2, useCORS: true, logging: false },
+        jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+    
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="ph ph-spinner animate-spin text-xl"></i> Generating...`;
+    btn.disabled = true;
+
+    html2pdf().set(opt).from(element).save().then(() => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        showToast('Invoice PDF Downloaded Successfully!', 'success');
+    }).catch(err => {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+        showToast('Error generating PDF', 'error');
+    });
+};
 
 function renderRequestsTable() {
     const tbody = document.getElementById('requests-tbody');
@@ -1133,6 +1357,7 @@ window.viewRequestDetails = function(reqId) {
     document.getElementById('modal-business').innerText = client.business || 'N/A';
     document.getElementById('modal-phone').innerText = client.phone;
     document.getElementById('modal-email').innerText = client.email || 'N/A';
+    document.getElementById('modal-address').innerText = client.address || 'N/A';
     document.getElementById('modal-website').innerText = client.website;
     document.getElementById('modal-source').innerText = client.source || 'N/A';
     
@@ -1149,22 +1374,44 @@ window.viewRequestDetails = function(reqId) {
         urlEl.classList.add('text-gray-900', 'dark:text-gray-200');
     }
     
-    const isCompleted = client.status === 'Completed';
-    const displayAdvance = isCompleted ? (client.price || 0) : (client.advance || 0);
-    const balance = Math.max(0, (Number(client.price) || 0) - Number(displayAdvance));
-    
-    document.getElementById('modal-price').innerText = `₹${(client.price || 0).toLocaleString('en-IN')}`;
-    document.getElementById('modal-advance').innerText = `₹${displayAdvance.toLocaleString('en-IN')}`;
-    
+    const extraCharge = Number(client.extraCharge) || 0;
+    const maintenanceCharge = Number(client.maintenanceCharge) || 0;
+    const paidAmount = calculatePaidAmount(client);
+    const totalExpected = (Number(client.price) || 0) + extraCharge + maintenanceCharge;
+    const balance = Math.max(0, totalExpected - paidAmount);
+
+    document.getElementById('modal-price').innerText = `₹${totalExpected.toLocaleString('en-IN')}`;
+    document.getElementById('modal-advance').innerText = `₹${paidAmount.toLocaleString('en-IN')}`;
+    document.getElementById('modal-price-breakdown').innerText = `Price: ₹${Number(client.price || 0).toLocaleString('en-IN')} | Extra: ₹${extraCharge.toLocaleString('en-IN')} | Maint: ₹${maintenanceCharge.toLocaleString('en-IN')}`;
+
     const balanceEl = document.getElementById('modal-balance');
-    if (isCompleted || balance <= 0) {
+    if (client.status === 'Completed' || balance <= 0) {
         balanceEl.innerText = 'Fully Paid';
         balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
     } else {
         balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
         balanceEl.className = 'font-bold text-xl text-accentRed';
     }
-    
+
+    let instHtml = '';
+    if (client.installments && client.installments.length > 0) {
+        instHtml = client.installments.map(i => `
+            <div class="flex justify-between items-center py-2.5 border-b border-gray-200 dark:border-gray-700 last:border-0">
+                <div>
+                    <p class="text-sm font-medium text-gray-900 dark:text-gray-100">${i.title || 'Installment'}</p>
+                    <p class="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5"><i class="ph ph-calendar-blank"></i> ${i.date ? new Date(i.date).toLocaleDateString('en-IN', {month:'short', day:'numeric', year:'numeric'}) : 'No due date'}</p>
+                </div>
+                <div class="text-right">
+                    <p class="text-sm font-bold text-gray-900 dark:text-gray-100 mb-1">₹${Number(i.amount).toLocaleString('en-IN')}</p>
+                    <span class="text-[10px] font-medium px-2.5 py-0.5 rounded-full ${i.status === 'Paid' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-500' : 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-500'}">${i.status}</span>
+                </div>
+            </div>
+        `).join('');
+    } else {
+        instHtml = '<p class="text-xs text-gray-500 italic">No milestone data recorded.</p>';
+    }
+    document.getElementById('modal-installments-list').innerHTML = instHtml;
+
     document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
     document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
     
