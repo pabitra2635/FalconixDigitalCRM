@@ -106,7 +106,6 @@ function calculatePaidAmount(client) {
         paid = Number(client.advance) || 0;
     }
     
-    // Automatically assume fully paid if status is 'Completed'
     if (client.status === 'Completed') {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         return Math.max(paid, expected);
@@ -258,7 +257,6 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
 
-            // Make True Net Profit & Expenses stats visible to ALL admins
             const expCard = document.getElementById('stat-card-expenses');
             expCard.classList.remove('hidden');
             expCard.classList.add('flex');
@@ -267,7 +265,6 @@ onAuthStateChanged(auth, async (user) => {
             netCard.classList.remove('hidden');
             netCard.classList.add('flex');
 
-            // ONLY Super Admin sees the detailed Expenses tab in the sidebar
             if (isSuperAdminUser) {
                 document.getElementById('nav-expenses').classList.remove('hidden');
                 document.getElementById('nav-expenses').classList.add('flex');
@@ -343,7 +340,6 @@ function setupDatabaseListener() {
         updateRequestsBadge();
     });
 
-    // Everyone needs to read expenses to calculate True Net Profit on the dashboard
     const expRef = collection(db, 'artifacts', appId, 'public', 'data', 'expenses');
     unsubscribeExpenses = onSnapshot(expRef, (snapshot) => {
         expensesList = [];
@@ -400,7 +396,6 @@ function renderExpenses() {
     const totalManual = expensesList.reduce((sum, e) => sum + (Number(e.amount)||0), 0);
     const totalAutoExtra = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
     
-    // Display the breakdown clearly in the UI
     totalDisplay.innerHTML = `Manual: <span class="font-bold">₹${totalManual.toLocaleString('en-IN')}</span> + Auto (Extra): <span class="font-bold">₹${totalAutoExtra.toLocaleString('en-IN')}</span>`;
 
     if (expensesList.length === 0) {
@@ -527,7 +522,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
                 createdAt: Date.now()
             });
 
-            // 🔔 Generate a universal notification so everyone knows a request arrived
             const notifRef = doc(collection(db, 'artifacts', appId, 'public', 'data', 'notifications'));
             await setDoc(notifRef, {
                 recipientEmail: 'all',
@@ -685,7 +679,6 @@ function updateDashboardStats() {
     document.getElementById('stat-active-projects').innerText = clientsList.filter(c => c.status === 'Active').length;
     document.getElementById('stat-completed-projects').innerText = clientsList.filter(c => c.status === 'Completed').length;
     
-    // 1. Calculate Total Gross Revenue (Base + Extra + Maint - Discount)
     const totalGrossRevenue = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => {
         const baseRevenue = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0));
         const extra = Number(client.extraCharge) || 0;
@@ -693,7 +686,6 @@ function updateDashboardStats() {
         return sum + baseRevenue + extra + maintenance;
     }, 0);
     
-    // 2. Calculate Pending Payments
     const totalPendingPayments = clientsList.filter(client => client.status !== 'Completed' && client.status !== 'Cancelled').reduce((sum, client) => {
         const expected = Math.max(0, (Number(client.price) || 0) - (Number(client.discount) || 0)) + (Number(client.extraCharge) || 0) + (Number(client.maintenanceCharge) || 0);
         const paid = calculatePaidAmount(client);
@@ -715,7 +707,6 @@ function updateDashboardStats() {
         pendingEl.title = formattedPending;
     }
 
-    // 3. Advanced True Net Profit Calculation
     const totalAutoExtraCharges = clientsList.filter(client => client.status === 'Completed').reduce((sum, client) => sum + (Number(client.extraCharge) || 0), 0);
     const totalManualExpenses = expensesList.reduce((sum, exp) => sum + (Number(exp.amount) || 0), 0);
     
@@ -1506,15 +1497,18 @@ function updateRequestsBadge() {
     if (!badge) {
         const navBtn = document.getElementById('nav-requests');
         if (navBtn) {
+            navBtn.innerHTML = `
+                <div class="flex items-center gap-3">
+                    <i class="ph ph-envelope text-xl"></i>
+                    <span class="font-medium">Requests</span>
+                </div>
+                <span id="nav-badge-requests" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto">0</span>
+            `;
+            
             navBtn.classList.remove('gap-3');
             navBtn.classList.add('justify-between');
             
-            const badgeSpan = document.createElement('span');
-            badgeSpan.id = 'nav-badge-requests';
-            badgeSpan.className = 'hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full ml-auto';
-            navBtn.appendChild(badgeSpan);
-            
-            badge = badgeSpan;
+            badge = document.getElementById('nav-badge-requests');
         }
     }
     
