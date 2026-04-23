@@ -375,12 +375,23 @@
                         <div class="mt-8 md:mt-10">
                             <div class="flex flex-col sm:flex-row sm:items-center justify-between mb-4 gap-4">
                                 <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Team Performance</h3>
-                                <select id="leaderboard-filter" class="w-full sm:w-48 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
-                                    <option value="this_month" selected>This Month</option>
-                                    <option value="last_month">Last Month</option>
-                                    <option value="this_year">This Year</option>
-                                    <option value="all_time">All Time</option>
-                                </select>
+                                <div class="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
+                                    <div id="custom-date-range" class="hidden items-center gap-2 w-full sm:w-auto transition-all">
+                                        <input type="date" id="custom-start-date" class="w-full sm:w-auto bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <span class="text-gray-500 text-sm font-medium">to</span>
+                                        <input type="date" id="custom-end-date" class="w-full sm:w-auto bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <button onclick="renderLeaderboard()" class="bg-accentRed text-white p-2 rounded-xl text-sm hover:bg-accentRedHover transition-colors shadow-sm shrink-0">
+                                            <i class="ph ph-magnifying-glass text-lg"></i>
+                                        </button>
+                                    </div>
+
+                                    <select id="leaderboard-filter" class="w-full sm:w-48 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                        <option value="this_month" selected>This Month</option>
+                                        <option value="last_month">Last Month</option>
+                                        <option value="this_year">This Year</option>
+                                        <option value="all_time">All Time</option>
+                                        <option value="custom">Custom Date</option> </select>
+                                </div>
                             </div>
                             <div class="glass rounded-2xl overflow-hidden shadow-sm border border-gray-300 dark:border-gray-800">
                                 <div id="leaderboard-table-container" class="overflow-x-auto">
