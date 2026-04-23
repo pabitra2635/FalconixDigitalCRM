@@ -944,12 +944,25 @@ function updateCharts() {
 
 function renderLeaderboard() {
     const filterEl = document.getElementById('leaderboard-filter');
+    const customDateRangeEl = document.getElementById('custom-date-range');
     const tbody = document.getElementById('leaderboard-tbody');
     const emptyState = document.getElementById('leaderboard-empty');
     const tableContainer = document.getElementById('leaderboard-table-container');
     if(!filterEl || !tbody || !emptyState || !tableContainer) return;
     
     const filter = filterEl.value;
+
+    if (filter === 'custom') {
+        if(customDateRangeEl) {
+            customDateRangeEl.classList.remove('hidden');
+            customDateRangeEl.classList.add('flex');
+        }
+    } else {
+        if(customDateRangeEl) {
+            customDateRangeEl.classList.add('hidden');
+            customDateRangeEl.classList.remove('flex');
+        }
+    }
 
     const now = new Date();
     let startDate = new Date(0);
@@ -962,13 +975,25 @@ function renderLeaderboard() {
         endDate = new Date(now.getFullYear(), now.getMonth(), 1);
     } else if (filter === 'this_year') {
         startDate = new Date(now.getFullYear(), 0, 1);
+    } else if (filter === 'custom') {
+        const customStart = document.getElementById('custom-start-date').value;
+        const customEnd = document.getElementById('custom-end-date').value;
+
+        if (customStart) {
+            startDate = new Date(customStart);
+            startDate.setHours(0, 0, 0, 0);
+        }
+        if (customEnd) {
+            endDate = new Date(customEnd);
+            endDate.setHours(23, 59, 59, 999);
+        }
     }
 
     const statsMap = {};
 
     clientsList.forEach(client => {
         const createdAt = new Date(client.createdAt);
-        if (createdAt >= startDate && createdAt < endDate) {
+        if (createdAt >= startDate && createdAt <= endDate) { 
             const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
             const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal';
 
