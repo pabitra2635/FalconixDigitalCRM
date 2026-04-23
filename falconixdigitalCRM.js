@@ -948,6 +948,7 @@ function renderLeaderboard() {
     const tbody = document.getElementById('leaderboard-tbody');
     const emptyState = document.getElementById('leaderboard-empty');
     const tableContainer = document.getElementById('leaderboard-table-container');
+    
     if(!filterEl || !tbody || !emptyState || !tableContainer) return;
     
     const filter = filterEl.value;
