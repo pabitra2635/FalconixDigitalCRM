@@ -942,7 +942,7 @@ function updateCharts() {
     });
 }
 
-function renderLeaderboard() {
+window.renderLeaderboard = function renderLeaderboard() {
     const filterEl = document.getElementById('leaderboard-filter');
     const customDateRangeEl = document.getElementById('custom-date-range');
     const tbody = document.getElementById('leaderboard-tbody');
