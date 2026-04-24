@@ -56,7 +56,7 @@ let unsubscribeRequests = null;
 let unsubscribeNotifications = null;
 let unsubscribeExpenses = null;
 let unsubscribeTeam = null;
-
+let unsubscribeCurrentAdmin = null;
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
 
@@ -396,6 +396,7 @@ onAuthStateChanged(auth, async (user) => {
         if(unsubscribeNotifications) unsubscribeNotifications();
         if(unsubscribeExpenses) unsubscribeExpenses();
         if(unsubscribeTeam) unsubscribeTeam();
+        if(unsubscribeCurrentAdmin) unsubscribeCurrentAdmin();
         appWrapper.classList.add('hidden');
         appWrapper.classList.remove('flex');
         loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -407,6 +408,35 @@ function setupDatabaseListener() {
     if (!currentUser) return;
     globalLoader.classList.remove('hidden');
     
+    if (!isSuperAdminUser && currentAdminData && currentAdminData.id) {
+        const myAdminRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', currentAdminData.id);
+        unsubscribeCurrentAdmin = onSnapshot(myAdminRef, (docSnap) => {
+            if (docSnap.exists()) {
+                const data = docSnap.data();
+                currentAdminData.canViewDashboard = data.canViewDashboard !== false;
+                
+                const navDash = document.getElementById('nav-dashboard');
+                if (!currentAdminData.canViewDashboard) {
+                    if (navDash) {
+                        navDash.classList.add('hidden');
+                        navDash.classList.remove('flex');
+                    }
+                    
+                    const dashView = document.getElementById('view-dashboard');
+                    if (dashView && dashView.classList.contains('active')) {
+                        navigate('client-list');
+                        showToast("Your dashboard access was revoked by a Super Admin.", "error");
+                    }
+                } else {
+                    if (navDash) {
+                        navDash.classList.remove('hidden');
+                        navDash.classList.add('flex');
+                    }
+                }
+            }
+        });
+    }
+
     const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
     unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
         clientsList = [];
@@ -682,6 +712,10 @@ window.toggleMobileMenu = function() {
 };
 
 window.navigate = function(viewId, isEdit = false) {
+    if (viewId === 'dashboard' && !isSuperAdminUser && !currentAdminData.canViewDashboard) {
+        showToast("Access Denied: You do not have permission to view the dashboard.", "error");
+        return;
+    }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => {
         el.classList.remove('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
