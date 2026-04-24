@@ -265,7 +265,20 @@ onAuthStateChanged(auth, async (user) => {
             
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
-
+            const navDashboard = document.getElementById('nav-dashboard');
+            if (user.email.toLowerCase() === 'ayanmondal21836@gmail.com') {
+                if (navDashboard) {
+                    navDashboard.classList.add('hidden');
+                    navDashboard.classList.remove('flex');
+                }
+                navigate('client-list'); 
+            } else {
+                if (navDashboard) {
+                    navDashboard.classList.remove('hidden');
+                    navDashboard.classList.add('flex');
+                }
+                navigate('dashboard'); 
+            }
             const expCard = document.getElementById('stat-card-expenses');
             if (expCard) {
                 expCard.classList.remove('hidden');
@@ -579,6 +592,9 @@ window.toggleMobileMenu = function() {
 };
 
 window.navigate = function(viewId, isEdit = false) {
+    if (viewId === 'dashboard' && currentUser && currentUser.email.toLowerCase() === 'ayanmondal21836@gmail.com') {
+        return; 
+    }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => {
         el.classList.remove('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
