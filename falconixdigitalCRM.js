@@ -307,11 +307,16 @@ onAuthStateChanged(auth, async (user) => {
         const isAdmin = await checkIfAdmin(user.email);
         if (isAdmin) {
             currentUser = user;
-            isSuperAdminUser = SUPER_ADMINS.includes(user.email.toLowerCase());
             
-            const updatedProfile = await updateAdminProfile(user);
-            if (updatedProfile) {
-                currentAdminData = updatedProfile;
+            isSuperAdminUser = (user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase());
+            
+            try {
+                const updatedProfile = await updateAdminProfile(user);
+                if (updatedProfile) {
+                    currentAdminData = updatedProfile;
+                }
+            } catch (error) {
+                console.warn("Profile update restricted by security rules. Continuing login safely...");
             }
 
             loggedInEmailText.innerText = user.email;
@@ -396,7 +401,8 @@ onAuthStateChanged(auth, async (user) => {
         if(unsubscribeNotifications) unsubscribeNotifications();
         if(unsubscribeExpenses) unsubscribeExpenses();
         if(unsubscribeTeam) unsubscribeTeam();
-        if(unsubscribeCurrentAdmin) unsubscribeCurrentAdmin();
+        if(typeof unsubscribeCurrentAdmin !== 'undefined' && unsubscribeCurrentAdmin) unsubscribeCurrentAdmin();
+        
         appWrapper.classList.add('hidden');
         appWrapper.classList.remove('flex');
         loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
