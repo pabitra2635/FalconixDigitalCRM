@@ -44,19 +44,15 @@ googleProvider.setCustomParameters({ prompt: 'select_account' });
 
 let currentUser = null;
 let isSuperAdminUser = false;
-let currentAdminData = { canViewDashboard: true };
 let clientsList = [];
 let requestsList = [];
 let notificationsList = [];
 let expensesList = [];
-let teamAdminsList = [];
-
 let unsubscribeClients = null;
 let unsubscribeRequests = null;
 let unsubscribeNotifications = null;
 let unsubscribeExpenses = null;
-let unsubscribeTeam = null;
-let unsubscribeCurrentAdmin = null;
+
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
 
@@ -71,11 +67,6 @@ const googleLoginBtn = document.getElementById('google-login-btn');
 const loginError = document.getElementById('login-error');
 
 const defaultBtnHtml = googleLoginBtn.innerHTML;
-
-window.getAvatarFallback = function(name, extraClasses = "w-8 h-8 text-xs") {
-    const initial = name ? name.charAt(0).toUpperCase() : '?';
-    return `<div class="${extraClasses} rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold border border-gray-300 dark:border-transparent shrink-0">${initial}</div>`;
-};
 
 window.addInstallmentRow = function(title = '', amount = '', date = '', status = 'Pending') {
     const container = document.getElementById('installments-container');
@@ -131,56 +122,19 @@ function calculatePaidAmount(client) {
     return paid;
 }
 
-async function updateAdminProfile(user) {
-    const lowerEmail = user.email.toLowerCase();
-    const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
-    const snapshot = await getDocs(adminsRef);
-    let foundDocId = null;
-    let existingData = null;
-
-    snapshot.forEach(doc => {
-        if (doc.data().email && doc.data().email.toLowerCase() === lowerEmail) {
-            foundDocId = doc.id;
-            existingData = doc.data();
-        }
-    });
-
-    const displayName = ADMIN_NAMES[lowerEmail] || user.displayName || user.email.split('@')[0];
-    const photoURL = user.photoURL || null;
-
-    if (foundDocId) {
-        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'admins', foundDocId);
-        await updateDoc(ref, { name: displayName, photoURL: photoURL });
-        return { id: foundDocId, canViewDashboard: existingData.canViewDashboard !== false, ...existingData, photoURL };
-    } else if (SUPER_ADMINS.includes(lowerEmail)) {
-        const newRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', lowerEmail);
-        await setDoc(newRef, { email: lowerEmail, name: displayName, photoURL: photoURL, canViewDashboard: true });
-        return { id: lowerEmail, canViewDashboard: true, email: lowerEmail, name: displayName, photoURL };
-    }
-    return null;
-}
-
 async function checkIfAdmin(email) {
     const lowerEmail = email.toLowerCase();
-    
+    if (SUPER_ADMINS.includes(lowerEmail)) return true;
     try {
         const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
         const snapshot = await getDocs(adminsRef);
         let foundAdmin = false;
-        
         snapshot.forEach(doc => {
             const data = doc.data();
             if (data.email && data.email.toLowerCase() === lowerEmail) {
                 foundAdmin = true;
-                currentAdminData = { id: doc.id, canViewDashboard: data.canViewDashboard !== false, ...data };
             }
         });
-        
-        if (SUPER_ADMINS.includes(lowerEmail)) {
-            currentAdminData = { canViewDashboard: true };
-            return true;
-        }
-
         return foundAdmin;
     } catch (error) {
         return false; 
@@ -194,7 +148,6 @@ googleLoginBtn.addEventListener('click', async () => {
         const result = await signInWithPopup(auth, googleProvider);
         const user = result.user;
         const isAdmin = await checkIfAdmin(user.email);
-        
         if (!isAdmin) {
             await signOut(auth);
             loginError.innerText = "Access Denied: Email not authorized as Admin.";
@@ -307,35 +260,9 @@ onAuthStateChanged(auth, async (user) => {
         const isAdmin = await checkIfAdmin(user.email);
         if (isAdmin) {
             currentUser = user;
-            
-            isSuperAdminUser = (user.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase());
-            
-            try {
-                const updatedProfile = await updateAdminProfile(user);
-                if (updatedProfile) {
-                    currentAdminData = updatedProfile;
-                }
-            } catch (error) {
-                console.warn("Profile update restricted by security rules. Continuing login safely...");
-            }
-
+            isSuperAdminUser = user.email.toLowerCase() === SUPER_ADMIN_EMAIL;
             loggedInEmailText.innerText = user.email;
-            const defaultName = user.displayName || user.email.split('@')[0];
-            const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
-            document.getElementById('logged-in-name').innerText = adminName;
             
-            const photoEl = document.getElementById('sidebar-admin-photo');
-            const fallbackEl = document.getElementById('sidebar-admin-fallback');
-            if (user.photoURL) {
-                photoEl.src = user.photoURL;
-                photoEl.classList.remove('hidden');
-                fallbackEl.classList.add('hidden');
-            } else {
-                photoEl.classList.add('hidden');
-                fallbackEl.classList.remove('hidden');
-                fallbackEl.innerText = adminName.charAt(0).toUpperCase();
-            }
-
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
 
@@ -357,26 +284,6 @@ onAuthStateChanged(auth, async (user) => {
                     navExp.classList.remove('hidden');
                     navExp.classList.add('flex');
                 }
-                const navTeam = document.getElementById('nav-team');
-                if (navTeam) {
-                    navTeam.classList.remove('hidden');
-                    navTeam.classList.add('flex');
-                }
-            }
-
-            const navDash = document.getElementById('nav-dashboard');
-            if (!isSuperAdminUser && !currentAdminData.canViewDashboard) {
-                if (navDash) {
-                    navDash.classList.add('hidden');
-                    navDash.classList.remove('flex');
-                }
-                navigate('client-list'); 
-            } else {
-                if (navDash) {
-                    navDash.classList.remove('hidden');
-                    navDash.classList.add('flex');
-                }
-                navigate('dashboard');
             }
 
             loginWrapper.classList.add('opacity-0', 'pointer-events-none');
@@ -384,7 +291,9 @@ onAuthStateChanged(auth, async (user) => {
                 loginWrapper.classList.add('hidden');
                 appWrapper.classList.remove('hidden');
                 appWrapper.classList.add('flex');
-                startContinuousTypewriter(adminName.split(' ')[0]);
+                const defaultName = user.email.split('@')[0];
+                const adminName = ADMIN_NAMES[user.email.toLowerCase()] || defaultName.charAt(0).toUpperCase() + defaultName.slice(1);
+                startContinuousTypewriter(adminName);
             }, 500);
             setupDatabaseListener();
         } else {
@@ -400,9 +309,6 @@ onAuthStateChanged(auth, async (user) => {
         if(unsubscribeRequests) unsubscribeRequests();
         if(unsubscribeNotifications) unsubscribeNotifications();
         if(unsubscribeExpenses) unsubscribeExpenses();
-        if(unsubscribeTeam) unsubscribeTeam();
-        if(typeof unsubscribeCurrentAdmin !== 'undefined' && unsubscribeCurrentAdmin) unsubscribeCurrentAdmin();
-        
         appWrapper.classList.add('hidden');
         appWrapper.classList.remove('flex');
         loginWrapper.classList.remove('hidden', 'opacity-0', 'pointer-events-none');
@@ -413,36 +319,7 @@ onAuthStateChanged(auth, async (user) => {
 function setupDatabaseListener() {
     if (!currentUser) return;
     globalLoader.classList.remove('hidden');
-
-    if (!isSuperAdminUser && currentAdminData && currentAdminData.id) {
-        const myAdminRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', currentAdminData.id);
-        
-        onSnapshot(myAdminRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                currentAdminData.canViewDashboard = data.canViewDashboard !== false;
-                
-                const navDash = document.getElementById('nav-dashboard');
-                if (!currentAdminData.canViewDashboard) {
-                    if (navDash) {
-                        navDash.classList.add('hidden');
-                        navDash.classList.remove('flex');
-                    }
-                    const dashView = document.getElementById('view-dashboard');
-                    if (dashView && dashView.classList.contains('active')) {
-                        navigate('client-list');
-                        showToast("Dashboard access revoked by Admin.", "error");
-                    }
-                } else {
-                    if (navDash) {
-                        navDash.classList.remove('hidden');
-                        navDash.classList.add('flex');
-                    }
-                }
-            }
-        });
-    }
-
+    
     const clientsRef = collection(db, 'artifacts', appId, 'public', 'data', 'clients');
     unsubscribeClients = onSnapshot(clientsRef, (snapshot) => {
         clientsList = [];
@@ -492,17 +369,6 @@ function setupDatabaseListener() {
         }
         updateDashboardStats(); 
     });
-
-    if (isSuperAdminUser) {
-        const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
-        unsubscribeTeam = onSnapshot(adminsRef, (snapshot) => {
-            teamAdminsList = [];
-            snapshot.forEach(doc => {
-                teamAdminsList.push({ id: doc.id, ...doc.data() });
-            });
-            renderTeamTable();
-        }, (err) => console.error(err));
-    }
 }
 
 document.getElementById('expense-form').addEventListener('submit', async (e) => {
@@ -609,8 +475,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     const existingClient = isEditing ? clientsList.find(c => c.id === clientId) : null;
     const addedEmail = isEditing ? (existingClient?.addedByEmail || currentUser.email) : currentUser.email;
     const addedName = isEditing ? (existingClient?.addedByName || ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]) : (ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0]);
-    
-    const addedByPhoto = isEditing ? (existingClient?.addedByPhoto || currentUser.photoURL) : currentUser.photoURL;
 
     let logAction = "Client details updated";
     const statusField = document.getElementById('form-status').value;
@@ -627,7 +491,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     const newLogEntry = {
         action: logAction,
         performedBy: addedName,
-        performedByPhoto: currentUser.photoURL || null,
         timestamp: Date.now()
     };
 
@@ -655,7 +518,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         updatedAt: Date.now(),
         addedByEmail: addedEmail,
         addedByName: addedName,
-        addedByPhoto: addedByPhoto,
         activityLog: activityLog
     };
 
@@ -672,7 +534,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
                 status: 'Pending',
                 requestedByEmail: currentUser.email,
                 requestedByName: ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0],
-                requestedByPhoto: currentUser.photoURL || null,
                 clientData: clientData,
                 targetClientId: isEditing ? clientId : reqId,
                 createdAt: Date.now()
@@ -718,17 +579,11 @@ window.toggleMobileMenu = function() {
 };
 
 window.navigate = function(viewId, isEdit = false) {
-    if (viewId === 'dashboard' && !isSuperAdminUser && !currentAdminData.canViewDashboard) {
-        showToast("Access Denied: You do not have permission to view the dashboard.", "error");
-        return;
-    }
-
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => {
         el.classList.remove('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
         el.classList.add('text-gray-700', 'dark:text-gray-400');
     });
-    
     const viewEl = document.getElementById(`view-${viewId}`);
     if(viewEl) viewEl.classList.add('active');
     
@@ -737,14 +592,12 @@ window.navigate = function(viewId, isEdit = false) {
         navBtn.classList.remove('text-gray-700', 'dark:text-gray-400');
         navBtn.classList.add('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
     }
-    
     if (window.innerWidth < 768) {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
         if(sidebar) sidebar.classList.add('-translate-x-full');
         if(overlay) overlay.classList.add('hidden');
     }
-    
     if(viewId === 'add-client' && !isEdit) {
         const formTitle = document.getElementById('form-title');
         const formSubmitBtn = document.getElementById('form-submit-btn');
@@ -761,7 +614,6 @@ window.navigate = function(viewId, isEdit = false) {
         if(clientForm) clientForm.reset();
         if(instContainer) instContainer.innerHTML = '';
     }
-    
     if(viewId === 'client-list' || viewId === 'dashboard') {
         renderClientTable(true);
     }
@@ -774,9 +626,6 @@ window.navigate = function(viewId, isEdit = false) {
     if(viewId === 'expenses') {
         const expDate = document.getElementById('exp-date');
         if(expDate) expDate.value = new Date().toISOString().split('T')[0];
-    }
-    if(viewId === 'team' && isSuperAdminUser) {
-        renderTeamTable();
     }
 };
 
@@ -1148,10 +997,9 @@ window.renderLeaderboard = function renderLeaderboard() {
         if (createdAt >= startDate && createdAt <= endDate) { 
             const email = client.addedByEmail || SUPER_ADMIN_EMAIL;
             const name = client.addedByName || ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal';
-            const photo = client.addedByPhoto || null; // Accessing the saved photo
 
             if (!statsMap[email]) {
-                statsMap[email] = { name: name, photo: photo, clientsCount: 0, revenue: 0, email: email };
+                statsMap[email] = { name: name, clientsCount: 0, revenue: 0, email: email };
             }
 
             statsMap[email].clientsCount++;
@@ -1165,7 +1013,6 @@ window.renderLeaderboard = function renderLeaderboard() {
                     if (!statsMap[SUPER_ADMIN_EMAIL]) {
                         statsMap[SUPER_ADMIN_EMAIL] = { 
                             name: ADMIN_NAMES[SUPER_ADMIN_EMAIL] || 'Pabitra Mondal', 
-                            photo: null,
                             clientsCount: 0, 
                             revenue: 0, 
                             email: SUPER_ADMIN_EMAIL 
@@ -1203,15 +1050,13 @@ window.renderLeaderboard = function renderLeaderboard() {
             else if (index === 1) rankHtml = `<span class="text-xl">🥈</span>`;
             else if (index === 2) rankHtml = `<span class="text-xl">🥉</span>`;
 
-            const adminPhotoHtml = stat.photo 
-                ? `<img src="${stat.photo}" class="w-8 h-8 rounded-full object-cover shrink-0 border border-gray-300 dark:border-gray-700">`
-                : getAvatarFallback(stat.name, 'w-8 h-8 text-sm');
-
             tr.innerHTML = `
                 <td class="p-3 md:p-4 text-center">${rankHtml}</td>
                 <td class="p-3 md:p-4">
                     <div class="flex items-center gap-2 md:gap-3">
-                        ${adminPhotoHtml}
+                        <div class="w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm shrink-0 border border-gray-300 dark:border-transparent">
+                            ${stat.name.charAt(0).toUpperCase()}
+                        </div>
                         <div>
                             <p class="font-medium text-gray-900 dark:text-gray-200 text-sm">${stat.name}</p>
                             <p class="text-[10px] text-gray-500">${stat.email}</p>
@@ -1224,7 +1069,7 @@ window.renderLeaderboard = function renderLeaderboard() {
             tbody.appendChild(tr);
         });
     }
-};
+}
 
 const leaderboardFilter = document.getElementById('leaderboard-filter');
 if(leaderboardFilter) leaderboardFilter.addEventListener('change', renderLeaderboard);
@@ -1304,14 +1149,11 @@ function renderClientTable(resetPage = false) {
                     </button>` : ''}
                 </div>
             `;
-            
-            const clientInitial = client.name.charAt(0).toUpperCase();
-
             tr.innerHTML = `
                 <td class="p-3 md:p-4 cursor-pointer" onclick="openModal('${client.id}')">
                     <div class="flex items-center gap-2 md:gap-3">
                         <div class="w-8 h-8 md:w-10 md:h-10 rounded-full bg-gray-200 dark:bg-gray-800 flex items-center justify-center text-gray-700 dark:text-gray-400 font-bold text-sm md:text-base shrink-0 border border-gray-300 dark:border-transparent">
-                            ${clientInitial}
+                            ${client.name.charAt(0).toUpperCase()}
                         </div>
                         <div>
                             <p class="font-semibold text-gray-900 dark:text-gray-200 text-sm md:text-base">${client.name}</p>
@@ -1362,19 +1204,13 @@ function renderActivityLog(client) {
         logContainer.innerHTML = '<p class="text-xs text-gray-500 px-2 py-1">No past activity recorded for this client.</p>';
     } else {
         const sortedLog = logArray.sort((a,b) => b.timestamp - a.timestamp);
-        logContainer.innerHTML = sortedLog.map(log => {
-            const photoHtml = log.performedByPhoto 
-                ? `<img src="${log.performedByPhoto}" class="absolute w-5 h-5 rounded-full object-cover -left-[10.5px] top-0 border border-white dark:border-darkCard">`
-                : `<div class="absolute w-2.5 h-2.5 rounded-full bg-accentRed -left-[5.5px] top-1"></div>`;
-
-            return `
+        logContainer.innerHTML = sortedLog.map(log => `
             <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-1.5 pl-4 pb-4 last:pb-0 relative">
-                ${photoHtml}
+                <div class="absolute w-2.5 h-2.5 rounded-full bg-accentRed -left-[5.5px] top-1"></div>
                 <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold text-gray-900 dark:text-white">${log.performedBy}</span> ${log.action.toLowerCase()}</p>
                 <p class="text-[10px] text-gray-500 mt-0.5">${new Date(log.timestamp).toLocaleString('en-IN')}</p>
             </div>
-            `;
-        }).join('');
+        `).join('');
     }
 }
 
@@ -1456,10 +1292,7 @@ window.openModal = function(id) {
     
     const addedByEl = document.getElementById('modal-added-by');
     if (client.addedByName || client.addedByEmail) {
-        const photoHtml = client.addedByPhoto 
-            ? `<img src="${client.addedByPhoto}" class="w-5 h-5 rounded-full object-cover">`
-            : getAvatarFallback(client.addedByName, 'w-5 h-5 text-[10px]');
-        addedByEl.innerHTML = `${photoHtml} <span>Added by: ${client.addedByName || client.addedByEmail}</span>`;
+        addedByEl.innerText = `Added by: ${client.addedByName || client.addedByEmail}`;
         addedByEl.classList.remove('hidden');
     } else {
         addedByEl.classList.add('hidden');
@@ -1831,18 +1664,9 @@ function renderRequestsTable() {
             let col4Html = '';
             
             if (isSuperAdminUser) {
-                const photoHtml = req.requestedByPhoto 
-                    ? `<img src="${req.requestedByPhoto}" class="w-8 h-8 rounded-full object-cover shrink-0">`
-                    : getAvatarFallback(req.requestedByName, 'w-8 h-8 text-xs');
-                    
                 col1Html = `
-                    <div class="flex items-center gap-3">
-                        ${photoHtml}
-                        <div>
-                            <p class="font-medium text-gray-900 dark:text-gray-200">${req.requestedByName}</p>
-                            <p class="text-[10px] md:text-xs text-gray-500">${req.requestedByEmail}</p>
-                        </div>
-                    </div>
+                    <p class="font-medium text-gray-900 dark:text-gray-200">${req.requestedByName}</p>
+                    <p class="text-[10px] md:text-xs text-gray-500">${req.requestedByEmail}</p>
                 `;
                 col4Html = `
                     <div class="flex items-center justify-end gap-2">
@@ -1963,10 +1787,7 @@ window.viewRequestDetails = function(reqId) {
     
     const addedByEl = document.getElementById('modal-added-by');
     if (req.requestedByName) {
-        const photoHtml = req.requestedByPhoto 
-            ? `<img src="${req.requestedByPhoto}" class="w-5 h-5 rounded-full object-cover">`
-            : getAvatarFallback(req.requestedByName, 'w-5 h-5 text-[10px]');
-        addedByEl.innerHTML = `${photoHtml} <span>Requested by: ${req.requestedByName}</span>`;
+        addedByEl.innerText = `Requested by: ${req.requestedByName} (${req.requestedByEmail})`;
         addedByEl.classList.remove('hidden');
     } else {
         addedByEl.classList.add('hidden');
@@ -1995,7 +1816,6 @@ window.approveReq = async function(reqId) {
         approvedClientData.activityLog.push({
             action: `Approved the update request`,
             performedBy: ADMIN_NAMES[currentUser.email.toLowerCase()] || "Super Admin",
-            performedByPhoto: currentUser.photoURL || null,
             timestamp: Date.now()
         });
 
@@ -2116,38 +1936,3 @@ window.markAllNotificationsRead = async function() {
         console.error(e);
     }
 }
-
-window.renderTeamTable = function() {
-    const tbody = document.getElementById('team-tbody');
-    if (!tbody) return;
-    tbody.innerHTML = '';
-    
-    teamAdminsList.forEach(admin => {
-        const canView = admin.canViewDashboard !== false;
-        const tr = document.createElement('tr');
-        tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
-        
-        tr.innerHTML = `
-            <td class="p-3 md:p-4 font-medium text-gray-900 dark:text-gray-200">${admin.name || admin.email.split('@')[0]}</td>
-            <td class="p-3 md:p-4 text-gray-600 dark:text-gray-400 text-sm">${admin.email}</td>
-            <td class="p-3 md:p-4 text-right">
-                <label class="relative inline-flex items-center cursor-pointer">
-                    <input type="checkbox" onchange="toggleDashboardAccess('${admin.id}', ${canView})" class="sr-only peer" ${canView ? 'checked' : ''}>
-                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
-                </label>
-            </td>
-        `;
-        tbody.appendChild(tr);
-    });
-};
-
-window.toggleDashboardAccess = async function(adminId, currentStatus) {
-    try {
-        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'admins', adminId);
-        await updateDoc(ref, { canViewDashboard: !currentStatus });
-        showToast("Admin permissions updated successfully.", "success");
-    } catch (error) {
-        showToast("Failed to update permissions.", "error");
-        renderTeamTable();
-    }
-};
