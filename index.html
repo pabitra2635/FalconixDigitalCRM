@@ -187,6 +187,10 @@
                     </div>
                     <span id="nav-badge-notifications" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </button>
+                <button onclick="navigate('team')" id="nav-team" class="hidden nav-btn w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
+                    <i class="ph ph-shield-check text-xl"></i>
+                    <span class="font-medium">Team Access</span>
+                </button>
             </nav>
 
             <div class="p-6 border-t border-gray-300 dark:border-gray-800 space-y-3">
@@ -742,6 +746,27 @@
                                 <i class="ph ph-bell-slash text-4xl text-gray-400 mb-3"></i>
                                 <h3 class="text-lg font-medium text-gray-900 dark:text-white">No notifications yet</h3>
                                 <p class="text-sm text-gray-500 max-w-sm">You will see alerts here when your requests are approved or rejected.</p>
+                            </div>
+                        </div>
+                    </section>
+                    <section id="view-team" class="view-section max-w-4xl mx-auto">
+                        <div class="mb-6 md:mb-8">
+                            <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Team Access Control</h2>
+                            <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">Manage dashboard visibility for your admin team.</p>
+                        </div>
+                        <div class="glass rounded-2xl overflow-hidden shadow-sm border border-gray-300 dark:border-gray-800">
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left border-collapse whitespace-nowrap min-w-[500px]">
+                                    <thead>
+                                        <tr class="bg-gray-200/80 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 text-xs md:text-sm border-b border-gray-300 dark:border-gray-700">
+                                            <th class="p-3 md:p-4 font-medium">Admin Name</th>
+                                            <th class="p-3 md:p-4 font-medium">Email Address</th>
+                                            <th class="p-3 md:p-4 font-medium text-right">Dashboard Access</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="team-tbody" class="divide-y divide-gray-200 dark:divide-gray-800 text-sm md:text-base bg-white/50 dark:bg-transparent">
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
                     </section>
