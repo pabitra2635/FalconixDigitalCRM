@@ -407,10 +407,11 @@ onAuthStateChanged(auth, async (user) => {
 function setupDatabaseListener() {
     if (!currentUser) return;
     globalLoader.classList.remove('hidden');
-    
+
     if (!isSuperAdminUser && currentAdminData && currentAdminData.id) {
         const myAdminRef = doc(db, 'artifacts', appId, 'public', 'data', 'admins', currentAdminData.id);
-        unsubscribeCurrentAdmin = onSnapshot(myAdminRef, (docSnap) => {
+        
+        onSnapshot(myAdminRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 currentAdminData.canViewDashboard = data.canViewDashboard !== false;
@@ -421,11 +422,10 @@ function setupDatabaseListener() {
                         navDash.classList.add('hidden');
                         navDash.classList.remove('flex');
                     }
-                    
                     const dashView = document.getElementById('view-dashboard');
                     if (dashView && dashView.classList.contains('active')) {
                         navigate('client-list');
-                        showToast("Your dashboard access was revoked by a Super Admin.", "error");
+                        showToast("Dashboard access revoked by Admin.", "error");
                     }
                 } else {
                     if (navDash) {
@@ -716,11 +716,13 @@ window.navigate = function(viewId, isEdit = false) {
         showToast("Access Denied: You do not have permission to view the dashboard.", "error");
         return;
     }
+
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => {
         el.classList.remove('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
         el.classList.add('text-gray-700', 'dark:text-gray-400');
     });
+    
     const viewEl = document.getElementById(`view-${viewId}`);
     if(viewEl) viewEl.classList.add('active');
     
@@ -729,12 +731,14 @@ window.navigate = function(viewId, isEdit = false) {
         navBtn.classList.remove('text-gray-700', 'dark:text-gray-400');
         navBtn.classList.add('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
     }
+    
     if (window.innerWidth < 768) {
         const sidebar = document.getElementById('sidebar');
         const overlay = document.getElementById('mobile-overlay');
         if(sidebar) sidebar.classList.add('-translate-x-full');
         if(overlay) overlay.classList.add('hidden');
     }
+    
     if(viewId === 'add-client' && !isEdit) {
         const formTitle = document.getElementById('form-title');
         const formSubmitBtn = document.getElementById('form-submit-btn');
@@ -751,6 +755,7 @@ window.navigate = function(viewId, isEdit = false) {
         if(clientForm) clientForm.reset();
         if(instContainer) instContainer.innerHTML = '';
     }
+    
     if(viewId === 'client-list' || viewId === 'dashboard') {
         renderClientTable(true);
     }
