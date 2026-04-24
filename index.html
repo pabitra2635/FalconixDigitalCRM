@@ -92,37 +92,6 @@
             -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
-
-        /* Invoice PDF Styles */
-        .a4-container {
-            width: 210mm;
-            min-height: 297mm;
-            background: white;
-            margin: 2rem auto;
-            padding: 15mm 20mm;
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-            position: relative;
-            overflow: hidden;
-        }
-
-        .watermark {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            opacity: 0.03;
-            pointer-events: none;
-            width: 65%;
-            z-index: 0;
-        }
-
-        .content-layer {
-            position: relative;
-            z-index: 10;
-            display: flex;
-            flex-direction: column;
-            min-height: calc(297mm - 30mm);
-        }
     </style>
 </head>
 <body class="bg-lightBg text-gray-900 dark:bg-darkBg dark:text-gray-200 h-[100dvh] overflow-hidden relative">
@@ -180,16 +149,17 @@
                     <i class="ph ph-receipt text-xl"></i>
                     <span class="font-medium">Expenses</span>
                 </button>
+                <!-- NEW TEAM ACCESS BUTTON -->
+                <button onclick="navigate('team')" id="nav-team" class="hidden nav-btn w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
+                    <i class="ph ph-shield-check text-xl"></i>
+                    <span class="font-medium">Team Access</span>
+                </button>
                 <button onclick="navigate('notifications')" id="nav-notifications" class="nav-btn w-full flex items-center justify-between px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
                     <div class="flex items-center gap-3">
                         <i class="ph ph-bell text-xl"></i>
                         <span class="font-medium">Notifications</span>
                     </div>
                     <span id="nav-badge-notifications" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
-                </button>
-                <button onclick="navigate('team')" id="nav-team" class="hidden nav-btn w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
-                    <i class="ph ph-shield-check text-xl"></i>
-                    <span class="font-medium">Team Access</span>
                 </button>
             </nav>
 
@@ -202,9 +172,18 @@
                     <span class="font-medium text-sm">Sign Out</span>
                     <i class="ph ph-sign-out text-lg"></i>
                 </button>
-                <div class="flex items-center gap-2 px-2">
-                    <div class="w-2 h-2 rounded-full bg-green-500"></div>
-                    <span id="logged-in-email" class="text-xs text-gray-600 dark:text-gray-500 truncate w-full">admin</span>
+                
+                <!-- UPDATED SIDEBAR PROFILE WITH PHOTO -->
+                <div class="flex items-center gap-3 px-2 pt-2">
+                    <div class="relative">
+                        <img id="sidebar-admin-photo" src="" alt="Admin" class="w-9 h-9 rounded-full object-cover hidden border border-gray-300 dark:border-gray-700 shadow-sm">
+                        <div id="sidebar-admin-fallback" class="w-9 h-9 rounded-full bg-accentRed text-white flex items-center justify-center font-bold text-sm shadow-sm hidden"></div>
+                        <div class="absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full bg-green-500 border border-white dark:border-darkBg"></div>
+                    </div>
+                    <div class="flex flex-col min-w-0">
+                        <span id="logged-in-name" class="text-sm font-semibold text-gray-900 dark:text-white truncate w-full">Admin</span>
+                        <span id="logged-in-email" class="text-[10px] text-gray-500 dark:text-gray-400 truncate w-full">admin@email.com</span>
+                    </div>
                 </div>
             </div>
         </aside>
@@ -237,6 +216,7 @@
                         </div>
 
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
+                            <!-- Dashboard stats cards remain unchanged -->
                             <div class="glass p-5 rounded-2xl flex flex-col justify-between border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-start">
                                     <div>
@@ -749,6 +729,8 @@
                             </div>
                         </div>
                     </section>
+
+                    <!-- NEW TEAM ACCESS SECTION -->
                     <section id="view-team" class="view-section max-w-4xl mx-auto">
                         <div class="mb-6 md:mb-8">
                             <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white">Team Access Control</h2>
@@ -759,7 +741,7 @@
                                 <table class="w-full text-left border-collapse whitespace-nowrap min-w-[500px]">
                                     <thead>
                                         <tr class="bg-gray-200/80 dark:bg-gray-800/50 text-gray-700 dark:text-gray-400 text-xs md:text-sm border-b border-gray-300 dark:border-gray-700">
-                                            <th class="p-3 md:p-4 font-medium">Admin Name</th>
+                                            <th class="p-3 md:p-4 font-medium">Admin</th>
                                             <th class="p-3 md:p-4 font-medium">Email Address</th>
                                             <th class="p-3 md:p-4 font-medium text-right">Dashboard Access</th>
                                         </tr>
@@ -770,6 +752,7 @@
                             </div>
                         </div>
                     </section>
+
                 </div>
             </main>
         </div>
@@ -866,7 +849,7 @@
                 </div>
             </div>
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
-                <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
+                <div id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:flex items-center gap-2"></div>
                 <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-blue-900 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-file-pdf text-xl"></i> Invoice
                 </button>
@@ -883,6 +866,7 @@
         </div>
     </div>
 
+    <!-- Invoice Modal -->
     <div id="invoice-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex-col items-center p-4 md:p-8 overflow-y-auto font-poppins">
         <div class="w-full max-w-[210mm] flex justify-between items-center mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shrink-0">
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
@@ -1037,6 +1021,7 @@
         </div>
     </div>
 
+    <!-- Modals -->
     <div id="logout-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
         <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
             <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-accentRed flex items-center justify-center mb-4">
