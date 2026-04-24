@@ -59,6 +59,10 @@ const ITEMS_PER_PAGE = 10;
 let revenueChartInstance = null;
 let sourceChartInstance = null;
 
+let currentAdminData = { canViewDashboard: true };
+let teamAdminsList = [];
+let unsubscribeTeam = null;
+
 const loginWrapper = document.getElementById('login-wrapper');
 const appWrapper = document.getElementById('app-wrapper');
 const globalLoader = document.getElementById('global-loader');
@@ -124,7 +128,10 @@ function calculatePaidAmount(client) {
 
 async function checkIfAdmin(email) {
     const lowerEmail = email.toLowerCase();
-    if (SUPER_ADMINS.includes(lowerEmail)) return true;
+    if (SUPER_ADMINS.includes(lowerEmail)) {
+        currentAdminData = { canViewDashboard: true };
+        return true;
+    }
     try {
         const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
         const snapshot = await getDocs(adminsRef);
@@ -133,6 +140,7 @@ async function checkIfAdmin(email) {
             const data = doc.data();
             if (data.email && data.email.toLowerCase() === lowerEmail) {
                 foundAdmin = true;
+                currentAdminData = { id: doc.id, canViewDashboard: data.canViewDashboard !== false, ...data };
             }
         });
         return foundAdmin;
@@ -272,6 +280,28 @@ onAuthStateChanged(auth, async (user) => {
                 expCard.classList.add('flex');
             }
             
+            if (isSuperAdminUser) {
+                const navTeam = document.getElementById('nav-team');
+                if (navTeam) {
+                    navTeam.classList.remove('hidden');
+                    navTeam.classList.add('flex');
+                }
+            }
+
+            const navDash = document.getElementById('nav-dashboard');
+            if (!isSuperAdminUser && !currentAdminData.canViewDashboard) {
+                if (navDash) {
+                    navDash.classList.add('hidden');
+                    navDash.classList.remove('flex');
+                }
+                navigate('client-list');
+            } else {
+                if (navDash) {
+                    navDash.classList.remove('hidden');
+                    navDash.classList.add('flex');
+                }
+                navigate('dashboard');
+            }
             const netCard = document.getElementById('stat-card-net-profit');
             if (netCard) {
                 netCard.classList.remove('hidden');
@@ -369,6 +399,16 @@ function setupDatabaseListener() {
         }
         updateDashboardStats(); 
     });
+    if (isSuperAdminUser) {
+        const adminsRef = collection(db, 'artifacts', appId, 'public', 'data', 'admins');
+        unsubscribeTeam = onSnapshot(adminsRef, (snapshot) => {
+            teamAdminsList = [];
+            snapshot.forEach(doc => {
+                teamAdminsList.push({ id: doc.id, ...doc.data() });
+            });
+            renderTeamTable();
+        });
+    }
 }
 
 document.getElementById('expense-form').addEventListener('submit', async (e) => {
@@ -1936,3 +1976,38 @@ window.markAllNotificationsRead = async function() {
         console.error(e);
     }
 }
+
+window.renderTeamTable = function() {
+    const tbody = document.getElementById('team-tbody');
+    if (!tbody) return;
+    tbody.innerHTML = '';
+    
+    teamAdminsList.forEach(admin => {
+        const canView = admin.canViewDashboard !== false;
+        const tr = document.createElement('tr');
+        tr.className = "hover:bg-gray-100/50 dark:hover:bg-gray-800/30 transition-colors border-b border-gray-200 dark:border-gray-800/50 last:border-0";
+        
+        tr.innerHTML = `
+            <td class="p-3 md:p-4 font-medium text-gray-900 dark:text-gray-200">${admin.name || admin.email.split('@')[0]}</td>
+            <td class="p-3 md:p-4 text-gray-600 dark:text-gray-400 text-sm">${admin.email}</td>
+            <td class="p-3 md:p-4 text-right">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" onchange="toggleDashboardAccess('${admin.id}', ${canView})" class="sr-only peer" ${canView ? 'checked' : ''}>
+                    <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-green-500"></div>
+                </label>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+};
+
+window.toggleDashboardAccess = async function(adminId, currentStatus) {
+    try {
+        const ref = doc(db, 'artifacts', appId, 'public', 'data', 'admins', adminId);
+        await updateDoc(ref, { canViewDashboard: !currentStatus });
+        showToast("Admin permissions updated successfully.", "success");
+    } catch (error) {
+        showToast("Failed to update permissions.", "error");
+        renderTeamTable();
+    }
+};
