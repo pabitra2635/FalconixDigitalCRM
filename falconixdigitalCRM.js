@@ -19,6 +19,10 @@ const ADMIN_NAMES = {
     'ayanmondal21836@gmail.com': 'Ayan Mondal'
 };
 
+const RESTRICTED_DASHBOARD_EMAILS = [
+    'ayanmondal21836@gmail.com',
+    'pabitramondal.ind@gmail.com'
+];
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
 
 const firebaseConfig = {
@@ -266,7 +270,8 @@ onAuthStateChanged(auth, async (user) => {
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
             const navDashboard = document.getElementById('nav-dashboard');
-            if (user.email.toLowerCase() === 'ayanmondal21836@gmail.com') {
+            
+            if (RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase())) {
                 if (navDashboard) {
                     navDashboard.classList.add('hidden');
                     navDashboard.classList.remove('flex');
@@ -592,7 +597,7 @@ window.toggleMobileMenu = function() {
 };
 
 window.navigate = function(viewId, isEdit = false) {
-    if (viewId === 'dashboard' && currentUser && currentUser.email.toLowerCase() === 'ayanmondal21836@gmail.com') {
+    if (viewId === 'dashboard' && currentUser && RESTRICTED_DASHBOARD_EMAILS.includes(currentUser.email.toLowerCase())) {
         return; 
     }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
