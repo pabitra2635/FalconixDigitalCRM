@@ -273,14 +273,16 @@ onAuthStateChanged(auth, async (user) => {
             
             if (RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase())) {
                 if (navDashboard) {
-                    navDashboard.classList.add('hidden');
-                    navDashboard.classList.remove('flex');
+                    navDashboard.classList.remove('hidden');
+                    navDashboard.classList.add('flex');
+                    navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
                 }
                 navigate('client-list'); 
             } else {
                 if (navDashboard) {
                     navDashboard.classList.remove('hidden');
                     navDashboard.classList.add('flex');
+                    navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
                 navigate('dashboard'); 
             }
@@ -598,6 +600,7 @@ window.toggleMobileMenu = function() {
 
 window.navigate = function(viewId, isEdit = false) {
     if (viewId === 'dashboard' && currentUser && RESTRICTED_DASHBOARD_EMAILS.includes(currentUser.email.toLowerCase())) {
+        showToast("You dont have the access of dashboard", "error");
         return; 
     }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
