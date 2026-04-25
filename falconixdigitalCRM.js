@@ -1176,7 +1176,18 @@ window.loadMoreClients = function() {
     currentPage++;
     renderClientTable(false); 
 };
-
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func.apply(this, args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+const debouncedSearch = debounce(() => renderClientTable(true), 300);
 function renderClientTable(resetPage = false) {
     if (resetPage) currentPage = 1;
     const tbody = document.getElementById('clients-tbody');
@@ -2034,16 +2045,3 @@ window.markAllNotificationsRead = async function() {
         console.error(e);
     }
 }
-
-function debounce(func, wait) {
-    let timeout;
-    return function(...args) {
-        const later = () => {
-            clearTimeout(timeout);
-            func.apply(this, args);
-        };
-        clearTimeout(timeout);
-        timeout = setTimeout(later, wait);
-    };
-}
-const debouncedSearch = debounce(() => renderClientTable(true), 300);
