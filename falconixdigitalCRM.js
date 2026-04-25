@@ -498,6 +498,65 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
 
+    // ==========================================
+    // 1. STRICT FORM VALIDATION
+    // ==========================================
+    
+    // --- A. Phone Number Validation (+91 Format) ---
+    const phoneInputEl = document.getElementById('form-phone');
+    const rawPhone = phoneInputEl.value.trim();
+    const numericPhone = rawPhone.replace(/\D/g, ''); 
+    
+    let formattedPhone = "";
+    if (numericPhone.length === 10) {
+        formattedPhone = "+91 " + numericPhone;
+    } else if (numericPhone.length === 12 && numericPhone.startsWith('91')) {
+        formattedPhone = "+91 " + numericPhone.substring(2);
+    } else {
+        showToast("Please enter a valid 10-digit mobile number.", "error");
+        phoneInputEl.focus();
+        return; 
+    }
+    
+    // --- B. Email Validation ---
+    const emailInput = document.getElementById('form-email').value.trim();
+    if (emailInput !== "") {
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (!emailRegex.test(emailInput)) {
+            showToast("Please enter a valid email address.", "error");
+            document.getElementById('form-email').focus();
+            return;
+        }
+    }
+
+    // --- C. Financial Validation ---
+    const priceInput = parseFloat(document.getElementById('form-price').value);
+    const discountInput = parseFloat(document.getElementById('form-discount').value) || 0;
+    const extraInput = parseFloat(document.getElementById('form-extra-charge').value) || 0;
+    const maintInput = parseFloat(document.getElementById('form-maintenance-charge').value) || 0;
+
+    if (isNaN(priceInput) || priceInput <= 0) {
+        showToast("Project price must be greater than ₹0.", "error");
+        document.getElementById('form-price').focus();
+        return;
+    }
+    if (discountInput < 0 || extraInput < 0 || maintInput < 0) {
+        showToast("Charges and discounts cannot be negative.", "error");
+        return;
+    }
+    if (discountInput > priceInput) {
+        showToast("Discount cannot be greater than the project price.", "error");
+        document.getElementById('form-discount').focus();
+        return;
+    }
+
+    // Update the input field directly so the correct string is picked up by `clientData` below
+    phoneInputEl.value = formattedPhone;
+
+    // ==========================================
+    // 2. CONTINUE WITH SUBMISSION
+    // ==========================================
+
     const submitBtn = document.getElementById('form-submit-btn');
     const idField = document.getElementById('client-id').value;
     const isEditing = !!idField;
@@ -615,7 +674,7 @@ window.toggleMobileMenu = function() {
 
 window.navigate = function(viewId, isEdit = false) {
     if (viewId === 'dashboard' && currentUser && RESTRICTED_DASHBOARD_EMAILS.includes(currentUser.email.toLowerCase())) {
-        showToast("You dont have the access of dashboard", "error");
+        showToast("You don't have access to the dashboard.", "error");
         return; 
     }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
@@ -1226,7 +1285,7 @@ function renderClientTable(resetPage = false) {
 }
 
 const searchInputEl = document.getElementById('search-input');
-if(searchInputEl) searchInputEl.addEventListener('input', () => renderClientTable(true));
+if(searchInputEl) searchInputEl.addEventListener('input', debouncedSearch);
 
 const filterStatusEl = document.getElementById('filter-status');
 if(filterStatusEl) filterStatusEl.addEventListener('change', () => renderClientTable(true));
@@ -1975,3 +2034,16 @@ window.markAllNotificationsRead = async function() {
         console.error(e);
     }
 }
+
+function debounce(func, wait) {
+    let timeout;
+    return function(...args) {
+        const later = () => {
+            clearTimeout(timeout);
+            func.apply(this, args);
+        };
+        clearTimeout(timeout);
+        timeout = setTimeout(later, wait);
+    };
+}
+const debouncedSearch = debounce(() => renderClientTable(true), 300);
