@@ -298,11 +298,24 @@ onAuthStateChanged(auth, async (user) => {
                 netCard.classList.add('flex');
             }
 
-            if (isSuperAdminUser) {
-                const navExp = document.getElementById('nav-expenses');
-                if (navExp) {
-                    navExp.classList.remove('hidden');
-                    navExp.classList.add('flex');
+            const navExp = document.getElementById('nav-expenses');
+            if (navExp) {
+                navExp.classList.remove('hidden');
+                navExp.classList.add('flex');
+            }
+
+            const expFormContainer = document.getElementById('expense-form')?.parentElement;
+            const expHistoryContainer = expFormContainer?.nextElementSibling;
+            
+            if (expFormContainer && expHistoryContainer) {
+                if (!isSuperAdminUser) {
+                    expFormContainer.classList.add('hidden');
+                    expHistoryContainer.classList.remove('lg:col-span-2');
+                    expHistoryContainer.classList.add('lg:col-span-3');
+                } else {
+                    expFormContainer.classList.remove('hidden');
+                    expHistoryContainer.classList.add('lg:col-span-2');
+                    expHistoryContainer.classList.remove('lg:col-span-3');
                 }
             }
 
@@ -384,10 +397,8 @@ function setupDatabaseListener() {
         });
         expensesList.sort((a,b) => new Date(b.date) - new Date(a.date));
         
-        if (isSuperAdminUser) {
-            renderExpenses();
-        }
-        updateDashboardStats(); 
+        renderExpenses();
+        updateDashboardStats();
     });
 }
 
@@ -453,6 +464,10 @@ function renderExpenses() {
             if(exp.category === 'Freelancer') catColor = "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-500";
             if(exp.category === 'Marketing') catColor = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-500";
 
+            const deleteBtnHtml = isSuperAdminUser ? 
+                `<button onclick="deleteExpense('${exp.id}')" class="text-gray-400 hover:text-red-500 transition-colors p-1"><i class="ph ph-trash text-lg"></i></button>` 
+                : '';
+
             tr.innerHTML = `
                 <td class="p-3 text-gray-600 dark:text-gray-400">${new Date(exp.date).toLocaleDateString('en-IN', {day:'2-digit', month:'short', year:'numeric'})}</td>
                 <td class="p-3 font-medium text-gray-900 dark:text-gray-200">${exp.description}</td>
@@ -461,7 +476,7 @@ function renderExpenses() {
                 </td>
                 <td class="p-3 text-right font-bold text-red-500">- ₹${Number(exp.amount).toLocaleString('en-IN')}</td>
                 <td class="p-3 text-center">
-                    <button onclick="deleteExpense('${exp.id}')" class="text-gray-400 hover:text-red-500 transition-colors p-1"><i class="ph ph-trash text-lg"></i></button>
+                    ${deleteBtnHtml}
                 </td>
             `;
             tbody.appendChild(tr);
