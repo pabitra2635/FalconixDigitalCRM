@@ -23,6 +23,12 @@ const RESTRICTED_DASHBOARD_EMAILS = [
     'ayanmondal21836@gmail.com',
     'pabitramondal.ind@gmail.com'
 ];
+
+const RESTRICTED_CLIENTS_EMAILS = [
+    'ayanmondal21836@gmail.com',
+    'pabitramondal.ind@gmail.com'
+];
+
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
 
 const firebaseConfig = {
@@ -269,23 +275,41 @@ onAuthStateChanged(auth, async (user) => {
             
             document.getElementById('nav-requests').classList.remove('hidden');
             document.getElementById('nav-requests').classList.add('flex');
-            const navDashboard = document.getElementById('nav-dashboard');
             
-            if (RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase())) {
-                if (navDashboard) {
-                    navDashboard.classList.remove('hidden');
-                    navDashboard.classList.add('flex');
+            const navDashboard = document.getElementById('nav-dashboard');
+            const navClientList = document.getElementById('nav-client-list');
+            
+            const isRestrictedFromDashboard = RESTRICTED_DASHBOARD_EMAILS.includes(user.email.toLowerCase());
+            const isRestrictedFromClients = RESTRICTED_CLIENTS_EMAILS.includes(user.email.toLowerCase());
+
+            if (navDashboard) {
+                navDashboard.classList.remove('hidden');
+                navDashboard.classList.add('flex');
+                if (isRestrictedFromDashboard) {
                     navDashboard.classList.add('opacity-50', 'cursor-not-allowed');
-                }
-                navigate('client-list'); 
-            } else {
-                if (navDashboard) {
-                    navDashboard.classList.remove('hidden');
-                    navDashboard.classList.add('flex');
+                } else {
                     navDashboard.classList.remove('opacity-50', 'cursor-not-allowed');
                 }
-                navigate('dashboard'); 
             }
+
+            if (navClientList) {
+                if (isRestrictedFromClients) {
+                    navClientList.classList.add('opacity-50', 'cursor-not-allowed');
+                } else {
+                    navClientList.classList.remove('opacity-50', 'cursor-not-allowed');
+                }
+            }
+
+            if (isRestrictedFromDashboard && !isRestrictedFromClients) {
+                navigate('client-list'); 
+            } else if (isRestrictedFromClients && !isRestrictedFromDashboard) {
+                navigate('dashboard'); 
+            } else if (isRestrictedFromClients && isRestrictedFromDashboard) {
+                navigate('add-client'); 
+            } else {
+                navigate('dashboard');
+            }
+
             const expCard = document.getElementById('stat-card-expenses');
             if (expCard) {
                 expCard.classList.remove('hidden');
@@ -675,6 +699,10 @@ window.toggleMobileMenu = function() {
 window.navigate = function(viewId, isEdit = false) {
     if (viewId === 'dashboard' && currentUser && RESTRICTED_DASHBOARD_EMAILS.includes(currentUser.email.toLowerCase())) {
         showToast("You don't have access to the dashboard.", "error");
+        return; 
+    }
+    if (viewId === 'client-list' && currentUser && RESTRICTED_CLIENTS_EMAILS.includes(currentUser.email.toLowerCase())) {
+        showToast("You don't have access to the client database.", "error");
         return; 
     }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
