@@ -1546,11 +1546,15 @@ function showToast(message, type = 'info') {
 
 const setElText = (id, text) => { const el = document.getElementById(id); if (el) el.innerText = text; };
 
-window.openInvoiceModal = function(clientId) {
-    const client = clientsList.find(c => c.id === clientId);
+window.openInvoiceModal = function(clientIdentifier, isRequestData = false) {
+    const client = isRequestData 
+        ? clientIdentifier 
+        : clientsList.find(c => c.id === clientIdentifier);
+
     if (!client) return;
 
-    const invoiceNo = `FD-${client.createdAt.toString().slice(-6)}`;
+    const createdAtStr = client.createdAt ? client.createdAt.toString() : Date.now().toString();
+    const invoiceNo = `FD-${createdAtStr.slice(-6)}`;
     
     setElText('inv-no', invoiceNo);
     setElText('inv-date', new Date().toLocaleDateString('en-IN'));
@@ -1933,6 +1937,12 @@ window.viewRequestDetails = function(reqId) {
     const cleanPhone = client.phone.replace(/[^0-9]/g, '');
     const whatsappEl = document.getElementById('modal-whatsapp');
     if(whatsappEl) whatsappEl.href = `https://wa.me/${cleanPhone}`;
+    
+    const invoiceBtn = document.getElementById('modal-invoice-btn');
+    if(invoiceBtn) {
+        invoiceBtn.classList.remove('hidden');
+        invoiceBtn.onclick = () => openInvoiceModal(client, true); 
+    }
     
     const editBtn = document.getElementById('modal-edit-btn');
     if(editBtn) editBtn.classList.add('hidden');
