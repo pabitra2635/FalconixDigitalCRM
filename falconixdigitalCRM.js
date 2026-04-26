@@ -21,12 +21,14 @@ const ADMIN_NAMES = {
 
 const RESTRICTED_DASHBOARD_EMAILS = [
     'ayanmondal21836@gmail.com',
-    'pabitramondal.ind@gmail.com'
+    'pabitramondal.ind@gmail.com',
+    'subhadeep0897@gmail.com'
 ];
 
 const RESTRICTED_CLIENTS_EMAILS = [
     'ayanmondal21836@gmail.com',
-    'pabitramondal.ind@gmail.com'
+    'pabitramondal.ind@gmail.com',
+    'subhadeep0897@gmail.com'
 ];
 
 const appId = typeof __app_id !== 'undefined' ? __app_id : 'falconix-crm';
