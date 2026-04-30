@@ -82,6 +82,49 @@ const loginError = document.getElementById('login-error');
 
 const defaultBtnHtml = googleLoginBtn.innerHTML;
 
+// --- NEW: Task Management Functions ---
+window.addTaskToForm = function(text = '', completed = false) {
+    const input = document.getElementById('new-task-input');
+    const taskText = text || input.value.trim();
+    if (!taskText) return;
+    
+    const container = document.getElementById('form-tasks-container');
+    const row = document.createElement('div');
+    row.className = 'flex items-center gap-3 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 p-2 rounded-lg task-row';
+    row.innerHTML = `
+        <input type="checkbox" class="task-completed w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary" ${completed ? 'checked' : ''}>
+        <input type="text" class="task-text flex-1 bg-transparent border-none text-sm focus:ring-0 p-0 text-gray-800 dark:text-gray-200 focus:outline-none" value="${taskText.replace(/"/g, '&quot;')}">
+        <button type="button" onclick="this.parentElement.remove()" class="text-gray-400 hover:text-red-500 p-1 transition-colors"><i class="ph ph-trash"></i></button>
+    `;
+    container.appendChild(row);
+    input.value = '';
+}
+
+function getTasksData() {
+    const rows = document.querySelectorAll('.task-row');
+    const tasks = [];
+    rows.forEach(row => {
+        tasks.push({
+            text: row.querySelector('.task-text').value.trim(),
+            completed: row.querySelector('.task-completed').checked
+        });
+    });
+    return tasks;
+}
+
+// Allow adding task via Enter key
+setTimeout(() => {
+    const taskInput = document.getElementById('new-task-input');
+    if (taskInput) {
+        taskInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault(); 
+                addTaskToForm();
+            }
+        });
+    }
+}, 1000);
+
 window.addInstallmentRow = function(title = '', amount = '', date = '', status = 'Pending') {
     const container = document.getElementById('installments-container');
     const row = document.createElement('div');
@@ -641,6 +684,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         extraCharge: parseFloat(document.getElementById('form-extra-charge').value) || 0,
         maintenanceCharge: parseFloat(document.getElementById('form-maintenance-charge').value) || 0,
         installments: getInstallmentsData(),
+        tasks: getTasksData(),
         deadline: document.getElementById('form-deadline').value || null,
         status: statusField,
         notes: document.getElementById('form-notes').value.trim(),
@@ -749,9 +793,11 @@ window.navigate = function(viewId, isEdit = false) {
         const clientIdEl = document.getElementById('client-id');
         const clientForm = document.getElementById('client-form');
         const instContainer = document.getElementById('installments-container');
+        const tasksContainer = document.getElementById('form-tasks-container');
         if(clientIdEl) clientIdEl.value = "";
         if(clientForm) clientForm.reset();
         if(instContainer) instContainer.innerHTML = '';
+        if(tasksContainer) tasksContainer.innerHTML = '';
     }
     if(viewId === 'client-list' || viewId === 'dashboard') {
         renderClientTable(true);
@@ -828,6 +874,11 @@ window.editClient = function(id) {
         client.installments.forEach(inst => addInstallmentRow(inst.title, inst.amount, inst.date, inst.status));
     } else if (client.advance > 0) {
         addInstallmentRow('Advance', client.advance, '', 'Paid');
+    }
+
+    document.getElementById('form-tasks-container').innerHTML = '';
+    if (client.tasks && client.tasks.length > 0) {
+        client.tasks.forEach(t => addTaskToForm(t.text, t.completed));
     }
 
     document.getElementById('form-title').innerText = "Edit Client Details";
@@ -1374,12 +1425,7 @@ window.postClientComment = async function(clientId) {
 
         commentInput.value = '';
         
-        const clientIndex = clientsList.findIndex(c => c.id === clientId);
-        if (clientIndex !== -1) {
-            if(!clientsList[clientIndex].activityLog) clientsList[clientIndex].activityLog = [];
-            clientsList[clientIndex].activityLog.push(newLogEntry);
-            renderActivityLog(clientsList[clientIndex]);
-        }
+        // Removed manual array push - the onSnapshot listener handles real-time UI updates!
     } catch (error) {
         showToast("Failed to post comment", "error");
     } finally {
@@ -1523,8 +1569,30 @@ window.openModal = function(id) {
     }
     document.getElementById('modal-installments-list').innerHTML = instHtml;
 
+    // Render Tasks
+    const tasksList = document.getElementById('modal-tasks-list');
+    const progressEl = document.getElementById('modal-task-progress');
+    if (tasksList) {
+        if (client.tasks && client.tasks.length > 0) {
+            const completedCount = client.tasks.filter(t => t.completed).length;
+            if(progressEl) progressEl.innerText = `${completedCount}/${client.tasks.length}`;
+            
+            tasksList.innerHTML = client.tasks.map((t, index) => `
+                <div class="flex items-start gap-3 p-2.5 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 rounded-lg shadow-sm group">
+                    <input type="checkbox" id="task-${client.id}-${index}" ${t.completed ? 'checked' : ''} 
+                           onchange="toggleTaskStatus('${client.id}', ${index}, this)"
+                           class="mt-0.5 w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary cursor-pointer shrink-0">
+                    <label for="task-${client.id}-${index}" class="text-sm flex-1 cursor-pointer transition-colors ${t.completed ? 'line-through text-gray-400 dark:text-gray-500' : 'text-gray-800 dark:text-gray-200 group-hover:text-accentPrimary'}">${t.text}</label>
+                </div>
+            `).join('');
+        } else {
+            if(progressEl) progressEl.innerText = `0/0`;
+            tasksList.innerHTML = '<p class="text-xs text-gray-500 italic">No tasks added for this project.</p>';
+        }
+    }
+
     document.getElementById('modal-deadline').innerHTML = client.deadline ? `<i class="ph ph-calendar"></i> ${new Date(client.deadline).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'})}` : 'Not Set';
-    document.getElementById('modal-notes').innerText = client.notes || 'No notes or tasks provided.';
+    document.getElementById('modal-notes').innerText = client.notes || 'No general notes provided.';
     
     const statusEl = document.getElementById('modal-status');
     statusEl.innerText = client.status;
@@ -1571,6 +1639,54 @@ window.openModal = function(id) {
     
     renderActivityLog(client);
     if(modal) modal.classList.remove('hidden');
+};
+
+// --- NEW FUNCTION: Toggle Task Status Directly from Modal ---
+window.toggleTaskStatus = async function(clientId, taskIndex, checkbox) {
+    const client = clientsList.find(c => c.id === clientId);
+    if (!client || !client.tasks) return;
+    
+    const isCompleted = checkbox.checked;
+    const label = document.querySelector(`label[for="task-${clientId}-${taskIndex}"]`);
+    if (label) {
+        if (isCompleted) {
+            label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+            label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+        } else {
+            label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+            label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+        }
+    }
+    
+    const updatedTasks = [...client.tasks];
+    updatedTasks[taskIndex].completed = isCompleted;
+    
+    const completedCount = updatedTasks.filter(t => t.completed).length;
+    const progressEl = document.getElementById('modal-task-progress');
+    if (progressEl) progressEl.innerText = `${completedCount}/${updatedTasks.length}`;
+
+    try {
+        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+        await updateDoc(clientRef, { tasks: updatedTasks });
+    } catch(e) {
+        showToast("Failed to update task", "error");
+        checkbox.checked = !isCompleted; 
+        
+        // Revert UI
+        if (label) {
+            if (!isCompleted) {
+                label.classList.add('line-through', 'text-gray-400', 'dark:text-gray-500');
+                label.classList.remove('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+            } else {
+                label.classList.remove('line-through', 'text-gray-400', 'dark:text-gray-500');
+                label.classList.add('text-gray-800', 'dark:text-gray-200', 'group-hover:text-accentPrimary');
+            }
+        }
+        if (progressEl) {
+            const oldCompletedCount = updatedTasks.filter(t => t.completed).length + (isCompleted ? -1 : 1);
+            progressEl.innerText = `${oldCompletedCount}/${updatedTasks.length}`;
+        }
+    }
 };
 
 window.closeModal = function() {
