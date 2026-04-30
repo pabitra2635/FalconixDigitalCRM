@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falconix Digital CRM - Secure Login</title>
-    <link rel="icon" type="image/jpeg" href="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png">
+    <link rel="icon" type="image/jpeg" href="Falconix_Digital_Logo.jpg">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -22,10 +22,10 @@
                         darkCard: '#111111',
                         lightBg: '#eef2f6',
                         lightCard: '#ffffff',
-                        accentRed: '#ff1a1a',
-                        accentRedHover: '#cc0000',
-                        brandDark: '#0A1F44',
-                        brandOrange: '#FF6B00',
+                        accentPrimary: '#7C3AED',
+                        accentPrimaryHover: '#6D28D9',
+                        brandDark: '#0B0F19',
+                        accentSecondary: '#0EA5E9',
                         brandGray: '#F8F9FA'
                     },
                     fontFamily: {
@@ -62,7 +62,7 @@
             background: transparent;
         }
         ::-webkit-scrollbar-thumb {
-            background: #ff1a1a;
+            background: #7C3AED;
             border-radius: 4px;
         }
         .view-section {
@@ -84,16 +84,15 @@
             animation: slideInRight 0.3s forwards;
         }
         .loader {
-            border: 3px solid rgba(255, 26, 26, 0.3);
+            border: 3px solid rgba(124, 58, 237, 0.3);
             border-radius: 50%;
-            border-top: 3px solid #ff1a1a;
+            border-top: 3px solid #7C3AED;
             width: 24px;
             height: 24px;
             -webkit-animation: spin 1s linear infinite;
             animation: spin 1s linear infinite;
         }
 
-        /* Invoice PDF Styles */
         .a4-container {
             width: 210mm;
             min-height: 297mm;
@@ -129,8 +128,8 @@
 
     <div id="login-wrapper" class="absolute inset-0 z-[100] flex flex-col items-center justify-center p-4 bg-lightBg dark:bg-darkBg transition-opacity duration-500">
         <div class="glass w-full max-w-md p-8 rounded-3xl shadow-2xl flex flex-col items-center">
-            <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-16 h-16 rounded-2xl mb-4 shadow-lg shadow-red-500/30 object-cover border border-gray-300 dark:border-gray-800">
-            <h1 class="text-2xl font-bold tracking-wide mb-1 text-gray-900 dark:text-white">Falconix<span class="text-accentRed">CRM</span></h1>
+            <img src="Falconix_Digital_Logo.jpg" alt="Falconix Logo" class="w-20 h-20 rounded-full mb-4 shadow-lg shadow-violet-500/30 object-cover border border-gray-300 dark:border-gray-800">
+            <h1 class="text-2xl font-bold tracking-wide mb-1 text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
             <p class="text-sm text-gray-600 dark:text-gray-400 mb-8 text-center">Admin Portal - Restricted Access</p>
             <div class="w-full space-y-4">
                 <button id="google-login-btn" class="w-full bg-white dark:bg-gray-100 text-gray-800 hover:bg-gray-100 border border-gray-300 dark:border-transparent dark:hover:bg-gray-200 py-3 rounded-xl font-medium transition-colors shadow-sm flex items-center justify-center gap-3 mt-2">
@@ -138,7 +137,7 @@
                     Sign in with Google
                 </button>
             </div>
-            <div id="login-error" class="mt-4 text-accentRed text-sm font-medium hidden text-center"></div>
+            <div id="login-error" class="mt-4 text-accentPrimary text-sm font-medium hidden text-center"></div>
         </div>
     </div>
 
@@ -148,16 +147,16 @@
         <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out w-64 glass bg-lightBg/95 dark:bg-darkBg/95 border-r border-gray-300 dark:border-gray-800 flex flex-col h-full z-40 shrink-0">
             <div class="p-6 flex items-center justify-between md:justify-start gap-3">
                 <div class="flex items-center gap-3">
-                    <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-8 h-8 rounded object-cover border border-gray-300 dark:border-gray-800">
-                    <h1 class="text-xl font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentRed">CRM</span></h1>
+                    <img src="Falconix_Digital_Logo.jpg" alt="Falconix Logo" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
+                    <h1 class="text-xl font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
                 </div>
-                <button onclick="toggleMobileMenu()" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-600 hover:text-accentRed">
+                <button onclick="toggleMobileMenu()" class="md:hidden w-8 h-8 flex items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-600 hover:text-accentPrimary">
                     <i class="ph ph-x text-lg"></i>
                 </button>
             </div>
 
             <nav class="flex-1 px-4 mt-2 md:mt-6 space-y-2 overflow-y-auto">
-                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-accentRed bg-gray-200/80 dark:bg-gray-800/50">
+                <button onclick="navigate('dashboard')" id="nav-dashboard" class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-accentPrimary bg-gray-200/80 dark:bg-gray-800/50">
                     <i class="ph ph-squares-four text-xl"></i>
                     <span class="font-medium">Dashboard</span>
                 </button>
@@ -174,7 +173,7 @@
                         <i class="ph ph-envelope text-xl"></i>
                         <span class="font-medium">Requests</span>
                     </div>
-                    <span id="nav-badge-requests" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                    <span id="nav-badge-requests" class="hidden bg-accentPrimary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </button>
                 <button onclick="navigate('expenses')" id="nav-expenses" class="hidden nav-btn w-full items-center gap-3 px-4 py-3 rounded-xl transition-all duration-200 text-left hover:bg-gray-200 dark:hover:bg-gray-800/50 text-gray-700 dark:text-gray-400">
                     <i class="ph ph-receipt text-xl"></i>
@@ -185,7 +184,7 @@
                         <i class="ph ph-bell text-xl"></i>
                         <span class="font-medium">Notifications</span>
                     </div>
-                    <span id="nav-badge-notifications" class="hidden bg-accentRed text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
+                    <span id="nav-badge-notifications" class="hidden bg-accentPrimary text-white text-[10px] font-bold px-2 py-0.5 rounded-full">0</span>
                 </button>
             </nav>
 
@@ -194,7 +193,7 @@
                     <span class="font-medium text-sm" id="theme-text">Dark Mode</span>
                     <i class="ph ph-moon text-lg" id="theme-icon"></i>
                 </button>
-                <button onclick="showLogoutModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-red-100 dark:bg-red-900/10 text-accentRed hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors">
+                <button onclick="showLogoutModal()" class="w-full flex items-center justify-between px-4 py-3 rounded-xl bg-red-100 dark:bg-red-900/10 text-red-600 hover:bg-red-200 dark:hover:bg-red-900/30 transition-colors">
                     <span class="font-medium text-sm">Sign Out</span>
                     <i class="ph ph-sign-out text-lg"></i>
                 </button>
@@ -208,17 +207,17 @@
         <div class="flex-1 flex flex-col min-w-0 h-[100dvh] overflow-hidden relative">
             <header class="md:hidden flex items-center justify-between p-4 glass border-b border-gray-300 dark:border-gray-800 z-20 shrink-0">
                 <div class="flex items-center gap-2">
-                    <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-8 h-8 rounded object-cover border border-gray-300 dark:border-gray-800">
-                    <h1 class="text-lg font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentRed">CRM</span></h1>
+                    <img src="Falconix_Digital_Logo.jpg" alt="Falconix Logo" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
+                    <h1 class="text-lg font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
                 </div>
-                <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-accentRed transition-colors">
+                <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-accentPrimary transition-colors">
                     <i class="ph ph-list text-2xl"></i>
                 </button>
             </header>
 
             <main class="flex-1 overflow-y-auto relative">
                 <div id="global-loader" class="absolute inset-0 bg-lightBg/80 dark:bg-darkBg/80 backdrop-blur-sm z-50 flex flex-col items-center justify-center hidden transition-opacity duration-300">
-                    <div class="loader mb-4 w-12 h-12 border-4 text-accentRed"></div>
+                    <div class="loader mb-4 w-12 h-12 border-4 text-accentPrimary"></div>
                     <p class="font-medium animate-pulse text-gray-800 dark:text-gray-200">Syncing Database...</p>
                 </div>
 
@@ -229,7 +228,7 @@
                         <div class="text-sm md:text-base text-gray-600 dark:text-gray-400 mb-6 md:mb-8 flex items-center min-h-[1.5rem]">
                             <span id="greeting-text" class="font-bold bg-gradient-to-r text-transparent bg-clip-text"></span>
                             <span id="greeting-emoji" class="mr-1 inline-block"></span>
-                            <span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentRed ml-[2px] -mt-[2px] text-lg">|</span>
+                            <span class="animate-[pulse_1s_ease-in-out_infinite] font-bold text-accentPrimary ml-[2px] -mt-[2px] text-lg">|</span>
                         </div>
 
                         <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 mb-8 md:mb-10">
@@ -273,9 +272,9 @@
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Gross Profit</p>
-                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-purple-600 dark:text-purple-500" id="stat-total-profit" title="0">₹0</h3>
+                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-violet-600 dark:text-violet-500" id="stat-total-profit" title="0">₹0</h3>
                                     </div>
-                                    <div class="w-10 h-10 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-500 shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-violet-600 dark:text-violet-500 shrink-0">
                                         <i class="ph ph-currency-inr text-xl"></i>
                                     </div>
                                 </div>
@@ -285,9 +284,9 @@
                                 <div class="flex justify-between items-start">
                                     <div>
                                         <p class="text-xs text-gray-600 dark:text-gray-400 font-medium">Pending Payments</p>
-                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-accentRed" id="stat-pending-payments" title="0">₹0</h3>
+                                        <h3 class="text-xl md:text-2xl font-bold mt-2 truncate text-accentPrimary" id="stat-pending-payments" title="0">₹0</h3>
                                     </div>
-                                    <div class="w-10 h-10 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center text-accentRed shrink-0">
+                                    <div class="w-10 h-10 rounded-full bg-violet-100 dark:bg-violet-900/30 flex items-center justify-center text-accentPrimary shrink-0">
                                         <i class="ph ph-wallet text-xl"></i>
                                     </div>
                                 </div>
@@ -342,7 +341,7 @@
 
                             <div class="lg:col-span-1 flex flex-col">
                                 <h3 class="text-lg md:text-xl font-bold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-white">
-                                    Upcoming Deadlines <i class="ph ph-alarm text-accentRed animate-pulse"></i>
+                                    Upcoming Deadlines <i class="ph ph-alarm text-accentPrimary animate-pulse"></i>
                                 </h3>
                                 <div class="glass rounded-2xl p-4 shadow-sm flex-1 flex flex-col gap-3" id="upcoming-deadlines-list">
                                 </div>
@@ -354,7 +353,7 @@
                             <div class="glass p-4 md:p-6 rounded-2xl flex flex-col border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-center mb-4">
                                     <h4 class="font-bold text-gray-900 dark:text-gray-200">Monthly Revenue (Completed)</h4>
-                                    <i class="ph ph-trend-up text-accentRed text-xl"></i>
+                                    <i class="ph ph-trend-up text-accentPrimary text-xl"></i>
                                 </div>
                                 <div class="relative w-full h-[250px]">
                                     <canvas id="revenueChart"></canvas>
@@ -364,7 +363,7 @@
                             <div class="glass p-4 md:p-6 rounded-2xl flex flex-col border border-gray-300 dark:border-gray-800">
                                 <div class="flex justify-between items-center mb-4">
                                     <h4 class="font-bold text-gray-900 dark:text-gray-200">Client Sources</h4>
-                                    <i class="ph ph-chart-pie-slice text-purple-600 dark:text-purple-500 text-xl"></i>
+                                    <i class="ph ph-chart-pie-slice text-violet-600 dark:text-violet-500 text-xl"></i>
                                 </div>
                                 <div class="relative w-full h-[250px] flex items-center justify-center">
                                     <canvas id="sourceChart"></canvas>
@@ -377,15 +376,15 @@
                                 <h3 class="text-lg md:text-xl font-bold text-gray-900 dark:text-white">Team Performance</h3>
                                 <div class="flex flex-col sm:flex-row gap-3 items-center w-full sm:w-auto">
                                     <div id="custom-date-range" class="hidden items-center gap-2 w-full sm:w-auto transition-all">
-                                        <input type="date" id="custom-start-date" onchange="renderLeaderboard()" class="w-full sm:w-auto bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="date" id="custom-start-date" onchange="renderLeaderboard()" class="w-full sm:w-auto bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                         <span class="text-gray-500 text-sm font-medium">to</span>
-                                        <input type="date" id="custom-end-date" onchange="renderLeaderboard()" class="w-full sm:w-auto bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
-                                        <button onclick="renderLeaderboard()" class="bg-accentRed text-white p-2 rounded-xl text-sm hover:bg-accentRedHover transition-colors shadow-sm shrink-0">
+                                        <input type="date" id="custom-end-date" onchange="renderLeaderboard()" class="w-full sm:w-auto bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-2 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
+                                        <button onclick="renderLeaderboard()" class="bg-accentPrimary text-white p-2 rounded-xl text-sm hover:bg-accentPrimaryHover transition-colors shadow-sm shrink-0">
                                             <i class="ph ph-magnifying-glass text-lg"></i>
                                         </button>
                                     </div>
 
-                                    <select id="leaderboard-filter" onchange="renderLeaderboard()" class="w-full sm:w-48 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                    <select id="leaderboard-filter" onchange="renderLeaderboard()" class="w-full sm:w-48 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none cursor-pointer">
                                         <option value="this_month" selected>This Month</option>
                                         <option value="last_month">Last Month</option>
                                         <option value="this_year">This Year</option>
@@ -424,7 +423,7 @@
                                 <p class="text-sm md:text-base text-gray-600 dark:text-gray-400">Manage and track your agency's clients.</p>
                             </div>
                             <div class="flex flex-wrap items-center gap-3 shrink-0">
-                                <button onclick="navigate('add-client')" class="bg-accentRed hover:bg-accentRedHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-red-500/30 shrink-0">
+                                <button onclick="navigate('add-client')" class="bg-accentPrimary hover:bg-accentPrimaryHover text-white px-4 md:px-5 py-2.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-2 shadow-lg shadow-violet-500/30 shrink-0">
                                     <i class="ph ph-plus text-lg"></i> New Client
                                 </button>
                             </div>
@@ -433,17 +432,17 @@
                         <div class="glass p-3 md:p-4 rounded-2xl mb-4 md:mb-6 flex flex-col lg:flex-row gap-3 md:gap-4 border border-gray-300 dark:border-gray-800">
                             <div class="flex-1 relative">
                                 <i class="ph ph-magnifying-glass absolute left-4 top-1/2 -translate-y-1/2 text-gray-500 dark:text-gray-400 text-lg"></i>
-                                <input type="text" id="search-input" placeholder="Search by name or phone..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 pl-11 pr-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                <input type="text" id="search-input" placeholder="Search by name or phone..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 pl-11 pr-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                             </div>
                             <div class="flex flex-col sm:flex-row gap-3 md:gap-4 w-full lg:w-auto shrink-0">
                                 <div class="w-full sm:w-48">
-                                    <select id="filter-owner" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                    <select id="filter-owner" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none cursor-pointer">
                                         <option value="All">All Clients</option>
                                         <option value="Mine">My Clients</option>
                                     </select>
                                 </div>
                                 <div class="w-full sm:w-48">
-                                    <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                    <select id="filter-status" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2.5 px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none cursor-pointer">
                                         <option value="All">All Statuses</option>
                                         <option value="Pending">Pending</option>
                                         <option value="Active">Active</option>
@@ -489,7 +488,7 @@
 
                     <section id="view-add-client" class="view-section max-w-4xl mx-auto">
                         <div class="mb-6 md:mb-8">
-                            <button onclick="navigate('client-list')" class="text-gray-600 hover:text-accentRed transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
+                            <button onclick="navigate('client-list')" class="text-gray-600 hover:text-accentPrimary transition-colors flex items-center gap-2 mb-3 md:mb-4 text-sm font-medium">
                                 <i class="ph ph-arrow-left"></i> Back to list
                             </button>
                             <h2 class="text-2xl md:text-3xl font-bold mb-1 md:mb-2 text-gray-900 dark:text-white" id="form-title">Add New Client</h2>
@@ -500,19 +499,19 @@
                             <input type="hidden" id="client-id">
                             
                             <div>
-                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-user text-accentRed"></i> Basic Information</h3>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-user text-accentPrimary"></i> Basic Information</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Client Name *</label>
-                                        <input type="text" id="form-name" required class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="text" id="form-name" required class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Business Type *</label>
-                                        <input type="text" id="form-business" required placeholder="e.g. CA Firm, Real Estate" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="text" id="form-business" required placeholder="e.g. CA Firm, Real Estate" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Client Source</label>
-                                        <select id="form-source" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none cursor-pointer">
+                                        <select id="form-source" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none cursor-pointer">
                                             <option value="Cold Call">Cold Call</option>
                                             <option value="Referral">Referral / Word of Mouth</option>
                                             <option value="Instagram">Instagram</option>
@@ -528,31 +527,31 @@
                             <hr class="border-gray-300 dark:border-gray-800">
 
                             <div>
-                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-address-book text-accentRed"></i> Contact Details</h3>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-address-book text-accentPrimary"></i> Contact Details</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Phone Number *</label>
-                                        <input type="tel" id="form-phone" required placeholder="+91 98765 43210" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="tel" id="form-phone" required placeholder="+91 98765 43210" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Email Address</label>
-                                        <input type="email" id="form-email" placeholder="client@example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="email" id="form-email" placeholder="client@example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                 </div>
                                 <div class="mt-4 md:mt-5">
                                     <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Client Address *</label>
-                                    <textarea id="form-address" rows="2" required placeholder="Full physical address..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
+                                    <textarea id="form-address" rows="2" required placeholder="Full physical address..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all resize-none"></textarea>
                                 </div>
                             </div>
 
                             <hr class="border-gray-300 dark:border-gray-800">
 
                             <div>
-                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-globe text-accentRed"></i> Project Details & Finance</h3>
+                                <h3 class="text-base md:text-lg font-semibold mb-3 md:mb-4 flex items-center gap-2 text-gray-900 dark:text-gray-100"><i class="ph ph-globe text-accentPrimary"></i> Project Details & Finance</h3>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mb-4 md:mb-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Website Type</label>
-                                        <select id="form-website" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                        <select id="form-website" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
                                             <option value="Landing Page">Landing Page</option>
                                             <option value="Corporate">Corporate / Business</option>
                                             <option value="E-Commerce">E-Commerce</option>
@@ -563,35 +562,35 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Live Website URL</label>
-                                        <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="url" id="form-website-url" placeholder="https://www.example.in" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Project Price (₹) *</label>
-                                        <input type="number" id="form-price" required min="0" step="0.01" placeholder="e.g. 20000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="number" id="form-price" required min="0" step="0.01" placeholder="e.g. 20000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Discount (₹)</label>
-                                        <input type="number" id="form-discount" min="0" step="0.01" placeholder="e.g. 2000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="number" id="form-discount" min="0" step="0.01" placeholder="e.g. 2000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Extra Charges (Domain)</label>
-                                        <input type="number" id="form-extra-charge" min="0" step="0.01" placeholder="e.g. 3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="number" id="form-extra-charge" min="0" step="0.01" placeholder="e.g. 3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Maintenance (₹)</label>
-                                        <input type="number" id="form-maintenance-charge" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+                                        <input type="number" id="form-maintenance-charge" min="0" step="0.01" placeholder="e.g. 5000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
                                     </div>
                                 </div>
                                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-5 mt-4 md:mt-5">
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Target Deadline</label>
-                                        <input type="date" id="form-deadline" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                        <input type="date" id="form-deadline" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
                                     </div>
                                     <div>
                                         <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Status</label>
-                                        <select id="form-status" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+                                        <select id="form-status" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
                                             <option value="Pending">Pending</option>
                                             <option value="Active">Active</option>
                                             <option value="Completed">Completed</option>
@@ -602,7 +601,7 @@
 
                                 <div class="mt-5 border border-gray-300 dark:border-gray-800 rounded-xl p-4 bg-gray-50/50 dark:bg-gray-900/30">
                                     <div class="flex justify-between items-center mb-3">
-                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100"><i class="ph ph-wallet text-accentRed"></i> Payment Installments</h4>
+                                        <h4 class="text-sm font-semibold text-gray-900 dark:text-gray-100"><i class="ph ph-wallet text-accentPrimary"></i> Payment Installments</h4>
                                         <button type="button" onclick="addInstallmentRow()" class="text-xs bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 px-3 py-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors shadow-sm font-medium text-gray-800 dark:text-gray-200">+ Add Milestone</button>
                                     </div>
                                     <div id="installments-container" class="space-y-2"></div>
@@ -612,14 +611,14 @@
                             
                             <div>
                                 <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Internal Notes / To-Do</label>
-                                <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific tasks..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all resize-none"></textarea>
+                                <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific tasks..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all resize-none"></textarea>
                             </div>
 
                             <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-300 dark:border-gray-800">
                                 <button type="button" onclick="navigate('client-list')" class="w-full sm:w-auto px-5 py-2.5 rounded-xl font-medium text-gray-700 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors text-center border border-gray-300 dark:border-transparent">
                                     Cancel
                                 </button>
-                                <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentRed hover:bg-accentRedHover text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-lg shadow-red-500/30 flex items-center justify-center gap-2">
+                                <button type="submit" id="form-submit-btn" class="w-full sm:w-auto bg-accentPrimary hover:bg-accentPrimaryHover text-white px-6 py-2.5 rounded-xl font-medium transition-all duration-300 shadow-lg shadow-violet-500/30 flex items-center justify-center gap-2">
                                     <i class="ph ph-floppy-disk text-lg"></i> <span>Save Client</span>
                                 </button>
                             </div>
@@ -665,18 +664,18 @@
                         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                             <div class="lg:col-span-1">
                                 <form id="expense-form" class="glass p-5 rounded-2xl shadow-sm border border-gray-300 dark:border-gray-800 space-y-4">
-                                    <h3 class="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i class="ph ph-receipt text-accentRed text-lg"></i> Log New Expense</h3>
+                                    <h3 class="font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2"><i class="ph ph-receipt text-accentPrimary text-lg"></i> Log New Expense</h3>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Description *</label>
-                                        <input type="text" id="exp-desc" required placeholder="e.g. Hostinger Server Renewal" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed">
+                                        <input type="text" id="exp-desc" required placeholder="e.g. Hostinger Server Renewal" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Amount (₹) *</label>
-                                        <input type="number" id="exp-amount" required min="1" step="0.01" placeholder="3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed">
+                                        <input type="number" id="exp-amount" required min="1" step="0.01" placeholder="3000" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary">
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Category</label>
-                                        <select id="exp-category" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed appearance-none cursor-pointer">
+                                        <select id="exp-category" class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary appearance-none cursor-pointer">
                                             <option value="Hosting/Domain">Hosting / Domain</option>
                                             <option value="Freelancer">Freelancer / Contractor</option>
                                             <option value="Software">Software / Tools</option>
@@ -686,9 +685,9 @@
                                     </div>
                                     <div>
                                         <label class="block text-xs font-medium text-gray-700 dark:text-gray-400 mb-1">Date *</label>
-                                        <input type="date" id="exp-date" required class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed appearance-none">
+                                        <input type="date" id="exp-date" required class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary appearance-none">
                                     </div>
-                                    <button type="submit" id="exp-submit-btn" class="w-full bg-brandDark hover:bg-blue-900 text-white py-2.5 rounded-xl font-medium transition-colors mt-2 flex justify-center items-center gap-2 shadow-md">
+                                    <button type="submit" id="exp-submit-btn" class="w-full bg-brandDark hover:bg-gray-800 text-white py-2.5 rounded-xl font-medium transition-colors mt-2 flex justify-center items-center gap-2 shadow-md">
                                         <i class="ph ph-plus-circle text-lg"></i> Add Expense
                                     </button>
                                 </form>
@@ -775,6 +774,15 @@
                         <p class="font-medium flex items-center gap-1 text-gray-900 dark:text-gray-200" id="modal-deadline">-</p>
                     </div>
                     
+                    <div>
+                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Created On</p>
+                        <p class="font-medium text-gray-900 dark:text-gray-200" id="modal-created-on">-</p>
+                    </div>
+                    <div id="modal-completed-container" class="hidden">
+                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Completed On</p>
+                        <p class="font-medium text-green-600 dark:text-green-500 flex items-center gap-1" id="modal-completed-on">-</p>
+                    </div>
+                    
                     <hr class="col-span-full border-gray-300 dark:border-gray-800">
                     
                     <div>
@@ -787,7 +795,7 @@
                     </div>
                     <div>
                         <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Client Source</p>
-                        <p class="font-medium text-indigo-600 dark:text-indigo-500" id="modal-source">-</p>
+                        <p class="font-medium text-accentPrimary dark:text-accentPrimaryHover" id="modal-source">-</p>
                     </div>
                     <div class="col-span-full sm:col-span-2 md:col-span-3">
                         <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Address</p>
@@ -817,7 +825,7 @@
                     </div>
                     <div class="text-right">
                         <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500">Balance Due</p>
-                        <p class="font-bold text-xl text-accentRed" id="modal-balance">-</p>
+                        <p class="font-bold text-xl text-accentPrimary" id="modal-balance">-</p>
                     </div>
                 </div>
                 <p id="modal-price-breakdown" class="text-center text-[11px] md:text-xs text-gray-500 dark:text-gray-400 mb-6 font-medium tracking-wide"></p>
@@ -835,14 +843,21 @@
                 <hr class="border-gray-300 dark:border-gray-800 my-4 md:my-6">
                 
                 <div>
-                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-3 font-medium">Activity Log</p>
-                    <div id="modal-activity-log" class="space-y-3 px-1">
+                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-3 font-medium">Activity & Comments</p>
+                    
+                    <!-- NEW COMMENT BOX -->
+                    <div class="mb-5 flex gap-2">
+                        <textarea id="modal-new-comment" rows="2" class="flex-1 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary resize-none" placeholder="Leave a note for the team..."></textarea>
+                        <button id="modal-post-comment-btn" class="bg-accentPrimary hover:bg-accentPrimaryHover text-white px-4 rounded-xl text-sm font-medium transition-colors shadow-md shadow-violet-500/20 shrink-0">Post</button>
+                    </div>
+
+                    <div id="modal-activity-log" class="space-y-1 px-1">
                     </div>
                 </div>
             </div>
             <div class="p-4 md:p-6 border-t border-gray-300 dark:border-gray-800 bg-gray-100/80 dark:bg-gray-900/50 flex flex-col sm:flex-row justify-end gap-3 shrink-0">
                 <p id="modal-added-by" class="text-xs text-gray-500 my-auto mr-auto hidden sm:block"></p>
-                <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-blue-900 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
+                <button id="modal-invoice-btn" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-brandDark hover:bg-gray-800 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
                     <i class="ph ph-file-pdf text-xl"></i> Invoice
                 </button>
                 <a id="modal-whatsapp" target="_blank" class="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-green-500 hover:bg-green-600 text-white font-medium transition-colors flex items-center justify-center gap-2 shadow-sm">
@@ -858,18 +873,19 @@
         </div>
     </div>
 
+    <!-- Invoice Modal -->
     <div id="invoice-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-[300] hidden flex-col items-center p-4 md:p-8 overflow-y-auto font-poppins">
         <div class="w-full max-w-[210mm] flex justify-between items-center mb-4 bg-white/10 p-4 rounded-2xl backdrop-blur-md border border-white/20 shrink-0">
             <button onclick="closeInvoiceModal()" class="text-white hover:text-red-400 flex items-center gap-2 transition-colors font-medium">
                 <i class="ph ph-x-circle text-2xl"></i> Close
             </button>
-            <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-brandOrange hover:bg-orange-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
+            <button id="btn-download-pdf" onclick="downloadInvoicePDF()" class="bg-accentSecondary hover:bg-sky-600 text-white px-6 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg transition-transform active:scale-95">
                 <i class="ph ph-download-simple text-xl"></i> Download PDF
             </button>
         </div>
 
         <div id="invoice-content" class="bg-white w-full max-w-[210mm] shrink-0 relative overflow-hidden shadow-2xl text-gray-800" style="min-height: 297mm; padding: 15mm 20mm;">
-            <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
+            <img src="Falconix_Digital_Logo.jpg" alt="Watermark" class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 opacity-[0.03] w-[65%] pointer-events-none z-0">
             
             <div id="inv-paid-stamp" class="hidden absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-20 pointer-events-none transform -rotate-[15deg]">
                 <div class="border-[12px] border-green-500/30 rounded-3xl px-16 py-8 inline-block shadow-sm">
@@ -880,10 +896,10 @@
             <div class="relative z-10 flex flex-col h-full">
                 <div class="flex justify-between items-start border-b-2 border-brandDark/10 pb-6 mb-8">
                     <div class="flex items-center gap-4">
-                        <img src="https://i.ibb.co/7Nz80xdL/Falconix-Digital-Logo.png" alt="Falconix Logo" class="w-16 h-16 rounded-xl shadow-md border border-gray-100 object-cover">
+                        <img src="Falconix_Digital_Logo.jpg" alt="Falconix Logo" class="w-16 h-16 rounded-full shadow-md border border-gray-100 object-cover">
                         <div>
                             <h1 class="text-3xl font-bold text-brandDark tracking-wide m-0">FALCONIX DIGITAL</h1>
-                            <p class="text-brandOrange font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
+                            <p class="text-accentSecondary font-medium text-sm mt-0.5 tracking-wider">Digital Solutions for Your Business</p>
                         </div>
                     </div>
                     <div class="text-right">
@@ -909,7 +925,7 @@
                         <p class="font-bold text-brandDark text-base">Falconix Digital</p>
                         <p class="text-sm text-gray-600 mt-1 leading-relaxed">Motihari, Bihar, India</p>
                         <p class="text-sm text-gray-600 leading-relaxed">+91 86370 28337</p>
-                        <p class="text-sm text-brandOrange font-medium leading-relaxed">digitalfalconix@gmail.com</p>
+                        <p class="text-sm text-accentSecondary font-medium leading-relaxed">digitalfalconix@gmail.com</p>
                         <p class="text-sm text-gray-600 leading-relaxed">falconixdigital.netlify.app</p>
                     </div>
                     <div>
@@ -942,7 +958,7 @@
                     <div class="flex-1">
                         <div class="bg-brandGray p-4 rounded-xl border border-gray-200 shadow-sm flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-brandOrange text-lg"></i> Payment Method</h3>
+                                <h3 class="text-sm font-bold text-brandDark mb-3 flex items-center gap-2"><i class="ph ph-bank text-accentSecondary text-lg"></i> Payment Method</h3>
                                 <div class="space-y-1.5 text-sm">
                                     <p class="text-gray-600"><span class="font-medium w-24 inline-block">UPI ID:</span> <span class="text-brandDark font-semibold">pabitramondal2635@oksbi</span></p>
                                     <p class="text-gray-600"><span class="font-medium w-24 inline-block">Account Name:</span> <span class="text-brandDark font-semibold">Pabitra Mondal</span></p>
@@ -966,7 +982,7 @@
                             </div>
                             <div class="flex justify-between items-center text-lg font-bold text-brandDark pt-1">
                                 <span>Total Amount:</span>
-                                <span id="inv-total" class="text-brandOrange">₹0</span>
+                                <span id="inv-total" class="text-accentSecondary">₹0</span>
                             </div>
                             <div class="flex justify-between text-green-600 pt-1">
                                 <span class="font-medium">Amount Paid:</span>
@@ -974,7 +990,7 @@
                             </div>
                             <div class="flex justify-between items-center text-lg border-t border-gray-200 pt-2">
                                 <span class="font-bold text-brandDark">Balance Due:</span>
-                                <span id="inv-balance" class="font-bold text-accentRed">₹0</span>
+                                <span id="inv-balance" class="font-bold text-accentPrimary">₹0</span>
                             </div>
                         </div>
                     </div>
@@ -1014,7 +1030,7 @@
 
     <div id="logout-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[150] hidden flex items-center justify-center p-4">
         <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
-            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-accentRed flex items-center justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mb-4">
                 <i class="ph ph-sign-out text-3xl"></i>
             </div>
             <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Sign Out</h3>
@@ -1023,7 +1039,7 @@
                 <button onclick="hideLogoutModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent">
                     Cancel
                 </button>
-                <button onclick="confirmLogout()" class="flex-1 py-2.5 rounded-xl bg-accentRed hover:bg-accentRedHover text-white font-medium transition-colors shadow-lg shadow-red-500/30">
+                <button onclick="confirmLogout()" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-lg shadow-red-500/30">
                     Yes, Sign Out
                 </button>
             </div>
@@ -1032,7 +1048,7 @@
 
     <div id="delete-confirm-modal" class="fixed inset-0 bg-black/60 backdrop-blur-sm z-[200] hidden flex items-center justify-center p-4">
         <div class="glass bg-lightCard dark:bg-darkCard w-full max-w-sm rounded-2xl shadow-2xl p-6 text-center flex flex-col items-center border border-gray-300 dark:border-gray-800">
-            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-accentRed flex items-center justify-center mb-4">
+            <div class="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center mb-4">
                 <i class="ph ph-warning-circle text-3xl"></i>
             </div>
             <h3 class="text-xl font-bold mb-2 text-gray-900 dark:text-white">Delete Client</h3>
@@ -1041,7 +1057,7 @@
                 <button onclick="hideDeleteModal()" class="flex-1 py-2.5 rounded-xl bg-gray-200 dark:bg-gray-800 hover:bg-gray-300 dark:hover:bg-gray-700 font-medium transition-colors text-gray-800 dark:text-gray-200 border border-gray-300 dark:border-transparent">
                     Cancel
                 </button>
-                <button id="confirm-delete-btn" class="flex-1 py-2.5 rounded-xl bg-accentRed hover:bg-accentRedHover text-white font-medium transition-colors shadow-lg shadow-red-500/30">
+                <button id="confirm-delete-btn" class="flex-1 py-2.5 rounded-xl bg-red-600 hover:bg-red-700 text-white font-medium transition-colors shadow-lg shadow-red-500/30">
                     Yes, Delete
                 </button>
             </div>
