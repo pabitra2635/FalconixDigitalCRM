@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Falconix Digital CRM - Secure Login</title>
-    <link rel="icon" type="image/jpeg" href="Falconix_Digital_Logo.png">
+    <link rel="icon" type="image/png" href="Falconix_Digital_Logo.png">
     
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
@@ -210,7 +210,7 @@
                     <img src="Falconix_Digital_Logo.png" alt="Falconix Logo" class="w-8 h-8 rounded-full object-cover border border-gray-300 dark:border-gray-800">
                     <h1 class="text-lg font-bold tracking-wide text-gray-900 dark:text-white">Falconix<span class="text-accentPrimary">CRM</span></h1>
                 </div>
-                <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-xl bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-accentPrimary transition-colors">
+                <button onclick="toggleMobileMenu()" class="w-10 h-10 flex items-center justify-center rounded-lg bg-gray-200 dark:bg-gray-800 text-gray-700 dark:text-gray-300 hover:text-accentPrimary transition-colors">
                     <i class="ph ph-list text-2xl"></i>
                 </button>
             </header>
@@ -610,8 +610,15 @@
                             </div>
                             
                             <div>
-                                <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Internal Notes / To-Do</label>
-                                <textarea id="form-notes" rows="4" placeholder="Client GST details, hosting credentials, specific tasks..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all resize-none"></textarea>
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1">Project Tasks</label>
+                                <div class="flex gap-2 mb-3">
+                                    <input type="text" id="new-task-input" placeholder="e.g. Buy Domain, Setup Hosting..." class="flex-1 bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
+                                    <button type="button" onclick="addTaskToForm()" class="bg-gray-200 dark:bg-gray-800 text-gray-800 dark:text-gray-200 px-4 py-2 md:py-2.5 rounded-xl text-sm font-medium hover:bg-gray-300 dark:hover:bg-gray-700 transition-colors shadow-sm shrink-0">Add Task</button>
+                                </div>
+                                <div id="form-tasks-container" class="space-y-2 mb-4"></div>
+
+                                <label class="block text-xs md:text-sm font-medium text-gray-700 dark:text-gray-400 mb-1 border-t border-gray-200 dark:border-gray-800 pt-4">Internal Notes</label>
+                                <textarea id="form-notes" rows="3" placeholder="Client GST details, specific requests..." class="w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-xl py-2 md:py-2.5 px-3 md:px-4 text-sm md:text-base focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all resize-none"></textarea>
                             </div>
 
                             <div class="flex flex-col-reverse sm:flex-row justify-end gap-3 pt-4 border-t border-gray-300 dark:border-gray-800">
@@ -836,7 +843,13 @@
                 </div>
 
                 <div class="bg-gray-50 dark:bg-gray-800/50 p-3 md:p-4 rounded-xl border border-gray-200 dark:border-gray-800">
-                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-1.5 md:mb-2 font-medium">Notes & Tasks</p>
+                    <div class="flex justify-between items-center mb-3">
+                        <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 font-semibold flex items-center gap-2"><i class="ph ph-check-square"></i> Project Tasks</p>
+                        <p id="modal-task-progress" class="text-[10px] md:text-xs font-bold text-accentPrimary bg-violet-100 dark:bg-violet-900/30 px-2 py-0.5 rounded-full">0/0</p>
+                    </div>
+                    <div id="modal-tasks-list" class="space-y-2 mb-4"></div>
+
+                    <p class="text-xs md:text-sm text-gray-600 dark:text-gray-500 mb-1.5 md:mb-2 font-medium border-t border-gray-200 dark:border-gray-700 pt-3">General Notes</p>
                     <p class="whitespace-pre-wrap text-sm text-gray-800 dark:text-gray-300" id="modal-notes">-</p>
                 </div>
 
