@@ -65,6 +65,8 @@ let unsubscribeRequests = null;
 let unsubscribeNotifications = null;
 let unsubscribeExpenses = null;
 
+let currentOpenClientId = null; // Helps maintain real-time comments
+
 let currentPage = 1;
 const ITEMS_PER_PAGE = 10;
 
@@ -86,16 +88,16 @@ window.addInstallmentRow = function(title = '', amount = '', date = '', status =
     row.className = 'flex flex-col md:flex-row gap-2 items-center installment-row';
     row.innerHTML = `
         <div class="w-full md:w-2/5">
-            <input type="text" placeholder="Milestone (e.g. 50% Upfront)" value="${title}" class="inst-title w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+            <input type="text" placeholder="Milestone (e.g. 50% Upfront)" value="${title}" class="inst-title w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
         </div>
         <div class="w-full md:w-1/4">
-            <input type="number" placeholder="Amt (₹)" value="${amount}" class="inst-amount w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all">
+            <input type="number" placeholder="Amt (₹)" value="${amount}" class="inst-amount w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all">
         </div>
         <div class="w-full md:w-1/4 flex gap-2">
-            <input type="date" value="${date}" class="inst-date w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+            <input type="date" value="${date}" class="inst-date w-full bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-3 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
         </div>
         <div class="w-full md:w-auto flex items-center gap-2 shrink-0">
-            <select class="inst-status bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-accentRed focus:ring-1 focus:ring-accentRed transition-all appearance-none">
+            <select class="inst-status bg-white dark:bg-darkCard border border-gray-300 dark:border-gray-700 rounded-lg py-1.5 px-2 text-sm focus:outline-none focus:border-accentPrimary focus:ring-1 focus:ring-accentPrimary transition-all appearance-none">
                 <option value="Pending" ${status === 'Pending' ? 'selected' : ''}>Pending</option>
                 <option value="Paid" ${status === 'Paid' ? 'selected' : ''}>Paid</option>
             </select>
@@ -228,7 +230,7 @@ function startContinuousTypewriter(name) {
     let charIndex = 0;
     let isDeleting = false;
     const gradients = [
-        "from-blue-600 via-indigo-600 to-purple-600 dark:from-blue-400 dark:via-indigo-400 dark:to-purple-400",
+        "from-blue-600 via-indigo-600 to-violet-600 dark:from-blue-400 dark:via-indigo-400 dark:to-violet-400",
         "from-emerald-600 via-teal-600 to-cyan-600 dark:from-emerald-400 dark:via-teal-400 dark:to-cyan-400",
         "from-orange-600 via-amber-600 to-yellow-500 dark:from-orange-500 dark:via-amber-400 dark:to-yellow-300",
         "from-rose-600 via-pink-600 to-fuchsia-600 dark:from-rose-400 dark:via-pink-400 dark:to-fuchsia-400",
@@ -390,6 +392,15 @@ function setupDatabaseListener() {
         updateCharts();
         renderLeaderboard();
         renderClientTable(true);
+
+        // Update the Modal in Real-Time if it's currently open
+        if (currentOpenClientId) {
+            const updatedClient = clientsList.find(c => c.id === currentOpenClientId);
+            if (updatedClient) {
+                renderActivityLog(updatedClient);
+            }
+        }
+
         globalLoader.classList.add('hidden');
     }, (error) => {
         showToast("Database sync error.", "error");
@@ -487,7 +498,7 @@ function renderExpenses() {
             
             let catColor = "bg-gray-200 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
             if(exp.category === 'Hosting/Domain') catColor = "bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-500";
-            if(exp.category === 'Freelancer') catColor = "bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-500";
+            if(exp.category === 'Freelancer') catColor = "bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-500";
             if(exp.category === 'Marketing') catColor = "bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-500";
 
             const deleteBtnHtml = isSuperAdminUser ? 
@@ -524,10 +535,6 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     e.preventDefault();
     if (!currentUser) return;
 
-    // ==========================================
-    // 1. STRICT FORM VALIDATION
-    // ==========================================
-    
     // --- A. Phone Number Validation (+91 Format) ---
     const phoneInputEl = document.getElementById('form-phone');
     const rawPhone = phoneInputEl.value.trim();
@@ -576,12 +583,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         return;
     }
 
-    // Update the input field directly so the correct string is picked up by `clientData` below
     phoneInputEl.value = formattedPhone;
-
-    // ==========================================
-    // 2. CONTINUE WITH SUBMISSION
-    // ==========================================
 
     const submitBtn = document.getElementById('form-submit-btn');
     const idField = document.getElementById('client-id').value;
@@ -611,11 +613,19 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
     const newLogEntry = {
         action: logAction,
         performedBy: addedName,
-        timestamp: Date.now()
+        timestamp: Date.now(),
+        isManual: false
     };
 
     const activityLog = isEditing && existingClient?.activityLog ? [...existingClient.activityLog] : [];
     activityLog.push(newLogEntry);
+
+    let completedAt = isEditing ? (existingClient?.completedAt || null) : null;
+    if (statusField === 'Completed' && (!isEditing || existingClient?.status !== 'Completed')) {
+        completedAt = Date.now();
+    } else if (statusField !== 'Completed') {
+        completedAt = null;
+    }
 
     const clientData = {
         name: document.getElementById('form-name').value.trim(),
@@ -636,6 +646,7 @@ document.getElementById('client-form').addEventListener('submit', async (e) => {
         notes: document.getElementById('form-notes').value.trim(),
         createdAt: isEditing ? (existingClient?.createdAt || Date.now()) : Date.now(),
         updatedAt: Date.now(),
+        completedAt: completedAt,
         addedByEmail: addedEmail,
         addedByName: addedName,
         activityLog: activityLog
@@ -709,7 +720,7 @@ window.navigate = function(viewId, isEdit = false) {
     }
     document.querySelectorAll('.view-section').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => {
-        el.classList.remove('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
+        el.classList.remove('text-accentPrimary', 'bg-gray-200/80', 'dark:bg-gray-800/50');
         el.classList.add('text-gray-700', 'dark:text-gray-400');
     });
     const viewEl = document.getElementById(`view-${viewId}`);
@@ -718,7 +729,7 @@ window.navigate = function(viewId, isEdit = false) {
     const navBtn = document.getElementById(`nav-${viewId}`);
     if(navBtn) {
         navBtn.classList.remove('text-gray-700', 'dark:text-gray-400');
-        navBtn.classList.add('text-accentRed', 'bg-gray-200/80', 'dark:bg-gray-800/50');
+        navBtn.classList.add('text-accentPrimary', 'bg-gray-200/80', 'dark:bg-gray-800/50');
     }
     if (window.innerWidth < 768) {
         const sidebar = document.getElementById('sidebar');
@@ -900,16 +911,17 @@ function updateDashboardStats() {
 
             let financeHtml = `<div>
                 <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
-                ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+                ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentPrimary font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
             </div>`;
 
             let viewBtnHtml = `<button onclick="event.stopPropagation(); openModal('${client.id}')" class="text-blue-500 dark:text-blue-400 hover:text-blue-700 transition-colors p-1 md:p-2" title="View Details"><i class="ph ph-eye text-base md:text-lg"></i></button>`;
-            let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentRed dark:hover:text-accentRed transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
+            let editBtnHtml = canEdit ? `<button onclick="event.stopPropagation(); editClient('${client.id}')" class="text-gray-500 dark:text-gray-400 hover:text-accentPrimary dark:hover:text-accentPrimary transition-colors p-1 md:p-2" title="Edit"><i class="ph ph-pencil-simple text-base md:text-lg"></i></button>` : '';
             
             tr.innerHTML = `
                 <td class="p-3 md:p-4">
                     <p class="font-medium text-gray-900 dark:text-gray-200">${client.name}</p>
                     <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500">${client.phone}</p>
+                    <p class="text-[9px] md:text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Added: ${new Date(client.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short' })}</p>
                 </td>
                 <td class="p-3 md:p-4 text-xs md:text-sm text-gray-700 dark:text-gray-300">${client.business || '-'}</td>
                 <td class="p-3 md:p-4">${financeHtml}</td>
@@ -1004,9 +1016,9 @@ function updateCharts() {
             datasets: [{
                 label: 'Revenue (₹)',
                 data: last6Months.map(m => m.revenue),
-                backgroundColor: '#ff1a1a',
+                backgroundColor: '#7C3AED',
                 borderRadius: 6,
-                hoverBackgroundColor: '#cc0000',
+                hoverBackgroundColor: '#6D28D9',
             }]
         },
         options: {
@@ -1262,7 +1274,7 @@ function renderClientTable(resetPage = false) {
 
             let financeHtml = `<div>
                 <p class="font-medium text-gray-900 dark:text-gray-200 text-sm md:text-base">₹${expected.toLocaleString('en-IN')}</p>
-                ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentRed font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
+                ${client.status === 'Completed' || balance <= 0 ? `<p class="text-[10px] md:text-xs text-green-600 dark:text-green-500 font-medium">Fully Paid</p>` : `<p class="text-[10px] md:text-xs text-accentPrimary font-medium">Bal: ₹${balance.toLocaleString('en-IN')}</p>`}
             </div>`;
             const d = new Date(client.deadline);
             const diffDays = client.deadline ? Math.ceil((d - new Date().setHours(0,0,0,0)) / (1000 * 60 * 60 * 24)) : null;
@@ -1297,6 +1309,7 @@ function renderClientTable(resetPage = false) {
                         <div>
                             <p class="font-semibold text-gray-900 dark:text-gray-200 text-sm md:text-base">${client.name}</p>
                             <p class="text-[10px] md:text-xs text-gray-600 dark:text-gray-500 flex items-center gap-1"><i class="ph ph-phone"></i> ${client.phone}</p>
+                            <p class="text-[10px] text-gray-400 dark:text-gray-500 mt-0.5">Added: ${new Date(client.createdAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                         </div>
                     </div>
                 </td>
@@ -1334,6 +1347,47 @@ if(filterStatusEl) filterStatusEl.addEventListener('change', () => renderClientT
 const filterOwnerEl = document.getElementById('filter-owner');
 if(filterOwnerEl) filterOwnerEl.addEventListener('change', () => renderClientTable(true));
 
+// --- NEW FUNCTION: Post Manual Comment ---
+window.postClientComment = async function(clientId) {
+    const commentInput = document.getElementById('modal-new-comment');
+    const text = commentInput.value.trim();
+    if (!text || !currentUser) return;
+
+    const btn = document.getElementById('modal-post-comment-btn');
+    const originalHtml = btn.innerHTML;
+    btn.innerHTML = `<i class="ph ph-spinner animate-spin"></i>`;
+    btn.disabled = true;
+
+    try {
+        const addedName = ADMIN_NAMES[currentUser.email.toLowerCase()] || currentUser.email.split('@')[0];
+        const newLogEntry = {
+            action: text,
+            performedBy: addedName,
+            timestamp: Date.now(),
+            isManual: true
+        };
+
+        const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', clientId);
+        await updateDoc(clientRef, {
+            activityLog: arrayUnion(newLogEntry)
+        });
+
+        commentInput.value = '';
+        
+        const clientIndex = clientsList.findIndex(c => c.id === clientId);
+        if (clientIndex !== -1) {
+            if(!clientsList[clientIndex].activityLog) clientsList[clientIndex].activityLog = [];
+            clientsList[clientIndex].activityLog.push(newLogEntry);
+            renderActivityLog(clientsList[clientIndex]);
+        }
+    } catch (error) {
+        showToast("Failed to post comment", "error");
+    } finally {
+        btn.innerHTML = originalHtml;
+        btn.disabled = false;
+    }
+};
+
 function renderActivityLog(client) {
     const logContainer = document.getElementById('modal-activity-log');
     if(!logContainer) return;
@@ -1342,14 +1396,33 @@ function renderActivityLog(client) {
     if (logArray.length === 0) {
         logContainer.innerHTML = '<p class="text-xs text-gray-500 px-2 py-1">No past activity recorded for this client.</p>';
     } else {
-        const sortedLog = logArray.sort((a,b) => b.timestamp - a.timestamp);
-        logContainer.innerHTML = sortedLog.map(log => `
-            <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-1.5 pl-4 pb-4 last:pb-0 relative">
-                <div class="absolute w-2.5 h-2.5 rounded-full bg-accentRed -left-[5.5px] top-1"></div>
-                <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold text-gray-900 dark:text-white">${log.performedBy}</span> ${log.action.toLowerCase()}</p>
-                <p class="text-[10px] text-gray-500 mt-0.5">${new Date(log.timestamp).toLocaleString('en-IN')}</p>
-            </div>
-        `).join('');
+        const sortedLog = [...logArray].sort((a,b) => b.timestamp - a.timestamp);
+        logContainer.innerHTML = sortedLog.map(log => {
+            const dateStr = new Date(log.timestamp).toLocaleString('en-IN');
+            
+            if (log.isManual) {
+                // Highlighted Chat-Bubble format for manual comments
+                return `
+                    <div class="mb-3 ml-[7px] pl-[13px] border-l-2 border-accentPrimary dark:border-accentPrimary relative">
+                        <div class="absolute w-3 h-3 rounded-full bg-accentPrimary -left-[7px] top-1 shadow-sm shadow-violet-500/50"></div>
+                        <div class="bg-violet-50 dark:bg-violet-900/20 border border-violet-100 dark:border-violet-800/50 rounded-xl p-3 shadow-sm">
+                            <p class="text-xs text-gray-500 mb-1"><span class="font-bold text-accentPrimary dark:text-accentPrimaryHover">${log.performedBy}</span> commented:</p>
+                            <p class="text-sm text-gray-800 dark:text-gray-200 whitespace-pre-wrap leading-relaxed">${log.action}</p>
+                            <p class="text-[9px] md:text-[10px] text-gray-400 mt-1.5 text-right">${dateStr}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                // Standard minimal timeline format for automated actions
+                return `
+                    <div class="border-l-2 border-gray-200 dark:border-gray-700 ml-2 pl-4 pb-4 last:pb-0 relative">
+                        <div class="absolute w-2.5 h-2.5 rounded-full bg-gray-400 dark:bg-gray-500 -left-[5.5px] top-1"></div>
+                        <p class="text-xs md:text-sm text-gray-800 dark:text-gray-200"><span class="font-semibold text-gray-900 dark:text-white">${log.performedBy}</span> ${log.action.toLowerCase()}</p>
+                        <p class="text-[10px] text-gray-500 mt-0.5">${dateStr}</p>
+                    </div>
+                `;
+            }
+        }).join('');
     }
 }
 
@@ -1358,6 +1431,8 @@ window.openModal = function(id) {
     const client = clientsList.find(c => c.id === id);
     if(!client) return;
     
+    currentOpenClientId = id; 
+    
     document.getElementById('modal-name').innerText = client.name;
     document.getElementById('modal-business').innerText = client.business || 'N/A';
     document.getElementById('modal-phone').innerText = client.phone;
@@ -1365,6 +1440,32 @@ window.openModal = function(id) {
     document.getElementById('modal-address').innerText = client.address || 'N/A';
     document.getElementById('modal-website').innerText = client.website;
     document.getElementById('modal-source').innerText = client.source || 'N/A';
+    
+    const createdDate = client.createdAt ? new Date(client.createdAt).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'}) : 'Unknown';
+    const createdOnEl = document.getElementById('modal-created-on');
+    if (createdOnEl) createdOnEl.innerText = createdDate;
+
+    const completedContainer = document.getElementById('modal-completed-container');
+    const completedOnEl = document.getElementById('modal-completed-on');
+    if (completedContainer && completedOnEl) {
+        if (client.status === 'Completed') {
+            let compDateStr = '-';
+            if (client.completedAt) {
+                compDateStr = new Date(client.completedAt).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+            } else if (client.activityLog) {
+                const completionLog = client.activityLog.find(log => log.action === 'Status changed to Completed');
+                if (completionLog) {
+                    compDateStr = new Date(completionLog.timestamp).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+                } else {
+                    compDateStr = new Date(client.updatedAt || client.createdAt).toLocaleDateString('en-IN', {year:'numeric', month:'short', day:'numeric'});
+                }
+            }
+            completedOnEl.innerHTML = `<i class="ph ph-check-circle"></i> ${compDateStr}`;
+            completedContainer.classList.remove('hidden');
+        } else {
+            completedContainer.classList.add('hidden');
+        }
+    }
     
     const urlEl = document.getElementById('modal-website-url');
     if (client.websiteUrl) {
@@ -1397,7 +1498,7 @@ window.openModal = function(id) {
         balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
     } else {
         balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
-        balanceEl.className = 'font-bold text-xl text-accentRed';
+        balanceEl.className = 'font-bold text-xl text-accentPrimary';
     }
 
     let instHtml = '';
@@ -1461,12 +1562,19 @@ window.openModal = function(id) {
     } else {
         deleteBtn.classList.add('hidden');
     }
+
+    const commentInput = document.getElementById('modal-new-comment');
+    if (commentInput) commentInput.value = '';
+    
+    const postBtn = document.getElementById('modal-post-comment-btn');
+    if (postBtn) postBtn.onclick = () => postClientComment(id);
     
     renderActivityLog(client);
     if(modal) modal.classList.remove('hidden');
 };
 
 window.closeModal = function() {
+    currentOpenClientId = null;
     if(modal) modal.classList.add('hidden');
 };
 
@@ -1857,6 +1965,7 @@ window.viewRequestDetails = function(reqId) {
     if(!req) return;
     
     const client = req.clientData;
+    currentOpenClientId = client.id;
     
     document.getElementById('modal-name').innerText = client.name + ` (${req.type} Request)`;
     document.getElementById('modal-business').innerText = client.business || 'N/A';
@@ -1896,7 +2005,7 @@ window.viewRequestDetails = function(reqId) {
         balanceEl.className = 'font-bold text-xl text-green-600 dark:text-green-500';
     } else {
         balanceEl.innerText = `₹${balance.toLocaleString('en-IN')}`;
-        balanceEl.className = 'font-bold text-xl text-accentRed';
+        balanceEl.className = 'font-bold text-xl text-accentPrimary';
     }
 
     let instHtml = '';
@@ -1965,7 +2074,8 @@ window.approveReq = async function(reqId) {
         approvedClientData.activityLog.push({
             action: `Approved the update request`,
             performedBy: ADMIN_NAMES[currentUser.email.toLowerCase()] || "Super Admin",
-            timestamp: Date.now()
+            timestamp: Date.now(),
+            isManual: false
         });
 
         const clientRef = doc(db, 'artifacts', appId, 'public', 'data', 'clients', req.targetClientId);
