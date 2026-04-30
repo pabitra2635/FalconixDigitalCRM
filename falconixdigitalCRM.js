@@ -83,21 +83,44 @@ const loginError = document.getElementById('login-error');
 const defaultBtnHtml = googleLoginBtn.innerHTML;
 
 // --- NEW: Task Management Functions ---
-window.addTaskToForm = function(text = '', completed = false) {
+window.addTaskToForm = function(textStr, isCompleted) {
     const input = document.getElementById('new-task-input');
-    const taskText = text || input.value.trim();
-    if (!taskText) return;
+    
+    // Safely extract the text, completely ignoring browser event objects
+    const taskText = (typeof textStr === 'string' && textStr.trim() !== '') 
+        ? textStr.trim() 
+        : (input ? input.value.trim() : '');
+        
+    const completed = typeof isCompleted === 'boolean' ? isCompleted : false;
+
+    // Don't add empty tasks
+    if (!taskText) {
+        if (input) input.focus();
+        return;
+    }
     
     const container = document.getElementById('form-tasks-container');
+    if (!container) return;
+
     const row = document.createElement('div');
     row.className = 'flex items-center gap-3 bg-white dark:bg-darkCard border border-gray-200 dark:border-gray-700 p-2 rounded-lg task-row';
+    
+    // Safely escape quotes so they don't break the HTML
+    const safeText = taskText.replace(/"/g, '&quot;');
+    
     row.innerHTML = `
-        <input type="checkbox" class="task-completed w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary" ${completed ? 'checked' : ''}>
-        <input type="text" class="task-text flex-1 bg-transparent border-none text-sm focus:ring-0 p-0 text-gray-800 dark:text-gray-200 focus:outline-none" value="${taskText.replace(/"/g, '&quot;')}">
-        <button type="button" onclick="this.parentElement.remove()" class="text-gray-400 hover:text-red-500 p-1 transition-colors"><i class="ph ph-trash"></i></button>
+        <input type="checkbox" class="task-completed w-4 h-4 text-accentPrimary rounded border-gray-300 focus:ring-accentPrimary cursor-pointer" ${completed ? 'checked' : ''}>
+        <input type="text" class="task-text flex-1 bg-transparent border-none text-sm focus:ring-0 p-0 text-gray-800 dark:text-gray-200 focus:outline-none" value="${safeText}">
+        <button type="button" onclick="this.parentElement.remove()" class="text-gray-400 hover:text-red-500 p-1 transition-colors"><i class="ph ph-trash text-lg"></i></button>
     `;
+    
     container.appendChild(row);
-    input.value = '';
+    
+    // Clear the input field after adding
+    if (input) {
+        input.value = '';
+        input.focus(); // Keep focus so you can quickly type the next task!
+    }
 }
 
 function getTasksData() {
@@ -2310,4 +2333,4 @@ window.markAllNotificationsRead = async function() {
     } catch (e) {
         console.error(e);
     }
-}  
+}
